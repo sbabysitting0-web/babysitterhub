@@ -59,7 +59,7 @@ const Navbar = () => {
       <div
         ref={pillRef}
         style={{
-          width: scrolled ? "55%" : "92%",
+          width: scrolled ? "64%" : "96%",
           marginTop: scrolled ? "12px" : "12px",
           padding: scrolled ? "10px 24px" : "14px 32px",
           borderRadius: scrolled ? "9999px" : "0 0 24px 24px",
