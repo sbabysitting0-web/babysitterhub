@@ -13,11 +13,11 @@ const SKILL_OPTIONS = ["First Aid","CPR Certified","Special Needs","Homework Hel
 const LANGUAGE_OPTIONS = ["English","Mandarin","Malay","Tamil","Hindi","French","Japanese"];
 const teal = "#3DBEB5";
 
-const DarkInput = ({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all ${className}`} />
+const DarkInput = ({ className = "", style, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input {...props} style={{ fontSize: "16px", ...style }} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all ${className}`} />
 );
-const DarkTextarea = ({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
-  <textarea {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all resize-none ${className}`} />
+const DarkTextarea = ({ className = "", style, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+  <textarea {...props} style={{ fontSize: "16px", ...style }} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all resize-none ${className}`} />
 );
 
 const BabysitterOnboarding = () => {

@@ -1,32 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Baby, User } from "lucide-react";
 import newLogo from "@/assets/new logo.png";
 
-const schema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type FormData = z.infer<typeof schema>;
 type Role = "parent" | "babysitter";
-
-const DarkInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className = "", ...props }, ref) => (
-    <input
-      ref={ref}
-      {...props}
-      className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/60 focus:ring-2 focus:ring-teal/15 transition-all ${className}`}
-    />
-  )
-);
-DarkInput.displayName = "DarkInput";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -34,17 +13,41 @@ const Signup = () => {
   const [role, setRole] = useState<Role>("parent");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+  // Use refs to reliably capture autofill values on mobile browsers
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
-  const onSubmit = async (data: FormData) => {
+  const validate = (name: string, email: string, password: string) => {
+    const newErrors: { name?: string; email?: string; password?: string } = {};
+    if (!name || name.trim().length < 2) newErrors.name = "Name must be at least 2 characters";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Enter a valid email";
+    if (!password || password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    return newErrors;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Read directly from DOM refs — captures autofill on mobile browsers
+    const name = (nameRef.current?.value ?? "").trim();
+    const email = (emailRef.current?.value ?? "").trim();
+    const password = passwordRef.current?.value ?? "";
+
+    const validationErrors = validate(name, email, password);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
     setLoading(true);
+
     const { data: authData, error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: { data: { name: data.name, role } },
+      email,
+      password,
+      options: { data: { name, role } },
     });
 
     if (error) {
@@ -67,10 +70,10 @@ const Signup = () => {
       }
 
       if (role === "parent") {
-        const { error: profileError } = await supabase.from("parent_profiles").upsert({ user_id: userId, name: data.name }, { onConflict: "user_id" });
+        const { error: profileError } = await supabase.from("parent_profiles").upsert({ user_id: userId, name }, { onConflict: "user_id" });
         if (profileError) console.warn("parent_profiles upsert:", profileError.message);
       } else {
-        const { error: profileError } = await supabase.from("babysitter_profiles").upsert({ user_id: userId, name: data.name }, { onConflict: "user_id" });
+        const { error: profileError } = await supabase.from("babysitter_profiles").upsert({ user_id: userId, name }, { onConflict: "user_id" });
         if (profileError) console.warn("babysitter_profiles upsert:", profileError.message);
       }
     }
@@ -85,6 +88,9 @@ const Signup = () => {
     { value: "parent", label: "I'm a Parent", desc: "I'm looking for childcare", icon: <Baby className="w-5 h-5" /> },
     { value: "babysitter", label: "I'm a Babysitter", desc: "I offer childcare services", icon: <User className="w-5 h-5" /> },
   ];
+
+  const inputClass =
+    "w-full bg-white/5 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-3 outline-none focus:border-teal/60 focus:ring-2 focus:ring-teal/15 transition-all";
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: "#080F0D" }}>
@@ -130,26 +136,43 @@ const Signup = () => {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-white/70">Full name</label>
-              <DarkInput placeholder="Jane Smith" {...register("name")} />
-              {errors.name && <p className="text-xs text-red-400">{errors.name.message}</p>}
+              <input
+                ref={nameRef}
+                type="text"
+                autoComplete="name"
+                placeholder="Jane Smith"
+                className={inputClass}
+                style={{ fontSize: "16px" }}
+              />
+              {errors.name && <p className="text-xs text-red-400">{errors.name}</p>}
             </div>
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-white/70">Email</label>
-              <DarkInput type="email" placeholder="you@example.com" {...register("email")} />
-              {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+              <input
+                ref={emailRef}
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className={inputClass}
+                style={{ fontSize: "16px" }}
+              />
+              {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
             </div>
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-white/70">Password</label>
               <div className="relative">
-                <DarkInput
+                <input
+                  ref={passwordRef}
                   type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="Min. 6 characters"
-                  {...register("password")}
+                  className={`${inputClass} pr-10`}
+                  style={{ fontSize: "16px" }}
                 />
                 <button
                   type="button"
@@ -159,14 +182,14 @@ const Signup = () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+              {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full font-semibold py-3 rounded-full text-sm text-white transition-all hover:opacity-90 hover:-translate-y-px disabled:opacity-50 mt-2"
-              style={{ background: "#3DBEB5" }}
+              className="w-full font-semibold py-3 rounded-full text-sm text-white transition-all hover:opacity-90 disabled:opacity-50 mt-2"
+              style={{ background: "#3DBEB5", fontSize: "16px" }}
             >
               {loading ? "Creating account…" : `Sign up as ${role === "parent" ? "Parent" : "Babysitter"}`}
             </button>
@@ -174,7 +197,7 @@ const Signup = () => {
 
           <p className="text-center text-xs text-white/30 mt-4">
             By signing up you agree to our{" "}
-            <Link to="/terms" className="hover:underline" style={{ color: "#3DBEB5" }}>Terms & Privacy</Link>
+            <Link to="/terms" className="hover:underline" style={{ color: "#3DBEB5" }}>Terms &amp; Privacy</Link>
           </p>
 
           <p className="text-center text-sm text-white/40 mt-4">

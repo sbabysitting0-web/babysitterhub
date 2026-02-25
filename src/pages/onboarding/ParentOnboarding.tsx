@@ -11,15 +11,15 @@ interface Child { name: string; age: string; special_needs: string; }
 const STEPS = ["Your Profile", "Your Children", "Location", "Done!"];
 
 const DarkInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className = "", ...props }, ref) => (
-    <input ref={ref} {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all ${className}`} />
+  ({ className = "", style, ...props }, ref) => (
+    <input ref={ref} {...props} style={{ fontSize: "16px", ...style }} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all ${className}`} />
   )
 );
 DarkInput.displayName = "DarkInput";
 
 const DarkTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className = "", ...props }, ref) => (
-    <textarea ref={ref} {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all resize-none ${className}`} />
+  ({ className = "", style, ...props }, ref) => (
+    <textarea ref={ref} {...props} style={{ fontSize: "16px", ...style }} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all resize-none ${className}`} />
   )
 );
 DarkTextarea.displayName = "DarkTextarea";
