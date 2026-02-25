@@ -11,7 +11,6 @@ const HeroSection = () => {
   const ctaRef = useRef<HTMLDivElement>(null);
   const card1Ref = useRef<HTMLDivElement>(null);
   const card2Ref = useRef<HTMLDivElement>(null);
-  const card3Ref = useRef<HTMLDivElement>(null);
   const orb1Ref = useRef<HTMLDivElement>(null);
   const orb2Ref = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLDivElement>(null);
@@ -22,7 +21,7 @@ const HeroSection = () => {
     const sub = subRef.current;
     const cta = ctaRef.current;
     const img = imgRef.current;
-    const cards = [card1Ref.current, card2Ref.current, card3Ref.current];
+    const cards = [card1Ref.current, card2Ref.current];
 
     const setInitial = (el: HTMLElement | null, props: Partial<CSSStyleDeclaration>) => {
       if (!el) return;
@@ -52,7 +51,6 @@ const HeroSection = () => {
     animate(img, 400, "0.8s");
     animate(card1Ref.current, 600);
     animate(card2Ref.current, 750);
-    animate(card3Ref.current, 900);
 
     const styleTag = document.createElement("style");
     styleTag.textContent = `@keyframes floatY { from { transform: translateY(0); } to { transform: translateY(-12px); } }`;
@@ -61,7 +59,6 @@ const HeroSection = () => {
     setTimeout(() => {
       if (card1Ref.current) card1Ref.current.style.animation = "floatY 3.5s ease-in-out 0s infinite alternate";
       if (card2Ref.current) card2Ref.current.style.animation = "floatY 4.2s ease-in-out 0.8s infinite alternate";
-      if (card3Ref.current) card3Ref.current.style.animation = "floatY 3.8s ease-in-out 1.4s infinite alternate";
     }, 1000);
 
     const handleScroll = () => {
@@ -143,13 +140,7 @@ const HeroSection = () => {
         <div className="grid lg:grid-cols-2 gap-14 items-center">
           {/* LEFT */}
           <div className="relative z-10">
-            <div
-              ref={badgeRef}
-              className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-teal text-xs font-bold px-4 py-1.5 rounded-full mb-7 backdrop-blur-sm"
-            >
-              <Shield size={12} className="text-teal" />
-              Trusted by 25,000+ families in Singapore
-            </div>
+           
 
             <h1
               ref={headlineRef}
@@ -245,25 +236,7 @@ const HeroSection = () => {
               </p>
             </div>
 
-            {/* Floating card 3 – sitters online */}
-            <div
-              ref={card3Ref}
-              className="absolute bottom-8 -left-4 lg:-left-8 bg-[#0E1E1A]/90 border border-teal/20 rounded-2xl shadow-lg px-4 py-2.5 z-20 backdrop-blur-md flex items-center gap-3"
-            >
-              <div className="flex -space-x-2">
-                {[
-                  "https://randomuser.me/api/portraits/women/44.jpg",
-                  "https://randomuser.me/api/portraits/women/68.jpg",
-                  "https://randomuser.me/api/portraits/women/32.jpg",
-                ].map((src, i) => (
-                  <img key={i} src={src} alt="sitter" className="w-8 h-8 rounded-full border-2 border-[#0E1E1A] object-cover" />
-                ))}
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">12k+ sitters</p>
-                <p className="text-[10px] text-white/40">Available now</p>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>

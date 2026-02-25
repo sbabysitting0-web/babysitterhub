@@ -208,11 +208,12 @@ const ParentDashboard = () => {
             <div className="relative" ref={profileMenuRef}>
               <button onClick={() => setShowProfileMenu((v) => !v)} className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm" style={{ background: TEAL }}>{firstName?.charAt(0) || "U"}</button>
               {showProfileMenu && (
-                <div className="absolute right-0 top-12 w-52 rounded-2xl shadow-2xl py-1 z-50" style={{ background: "#0A1714", border: `1px solid ${BORDER}` }}>
+                <div className="absolute right-0 top-12 w-52 rounded-2xl shadow-2xl py-1 z-[2000]" style={{ background: "#0A1714", border: `1px solid ${BORDER}` }}>
                   <div className="px-4 py-3" style={{ borderBottom: `1px solid ${BORDER}` }}>
                     <p className="font-semibold text-sm text-white">{profile?.name || "My Account"}</p>
                     <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.35)" }}>{user?.email}</p>
                   </div>
+
                   <Link to="/onboarding/parent" onClick={() => setShowProfileMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: "rgba(255,255,255,0.6)" }}><User size={14} /> Edit Profile</Link>
                   <div style={{ borderTop: `1px solid ${BORDER}` }}>
                     <button onClick={() => { setShowProfileMenu(false); handleSignOut(); }} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 w-full text-left"><LogOut size={14} /> Sign out</button>

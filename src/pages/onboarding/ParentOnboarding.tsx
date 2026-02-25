@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,12 +10,19 @@ import newLogo from "@/assets/new logo.png";
 interface Child { name: string; age: string; special_needs: string; }
 const STEPS = ["Your Profile", "Your Children", "Location", "Done!"];
 
-const DarkInput = ({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all ${className}`} />
+const DarkInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  ({ className = "", ...props }, ref) => (
+    <input ref={ref} {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all ${className}`} />
+  )
 );
-const DarkTextarea = ({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
-  <textarea {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all resize-none ${className}`} />
+DarkInput.displayName = "DarkInput";
+
+const DarkTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  ({ className = "", ...props }, ref) => (
+    <textarea ref={ref} {...props} className={`w-full bg-white/5 border border-white/10 text-white placeholder-white/25 rounded-xl px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/10 transition-all resize-none ${className}`} />
+  )
 );
+DarkTextarea.displayName = "DarkTextarea";
 
 const ParentOnboarding = () => {
   const { user } = useAuth();
@@ -24,6 +31,7 @@ const ParentOnboarding = () => {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [children, setChildren] = useState<Child[]>([{ name: "", age: "", special_needs: "" }]);
 
   const { register, getValues, reset } = useForm({
@@ -38,7 +46,10 @@ const ParentOnboarding = () => {
         supabase.from("parent_profiles").select("name, phone, about, city, address").eq("user_id", user.id).maybeSingle(),
         supabase.from("children").select("name, age, special_needs").eq("parent_id", user.id),
       ]);
-      if (profile) reset({ name: profile.name ?? "", phone: profile.phone ?? "", about: profile.about ?? "", city: profile.city ?? "", address: profile.address ?? "" });
+      if (profile) {
+        reset({ name: profile.name ?? "", phone: profile.phone ?? "", about: profile.about ?? "", city: profile.city ?? "", address: profile.address ?? "" });
+        setIsEditing(true);
+      }
       if (existingChildren && existingChildren.length > 0) {
         setChildren(existingChildren.map((c) => ({ name: c.name ?? "", age: c.age != null ? String(c.age) : "", special_needs: c.special_needs ?? "" })));
       }
@@ -96,6 +107,18 @@ const ParentOnboarding = () => {
     <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: "#080F0D" }}>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none" style={{ background: "radial-gradient(ellipse, rgba(61,190,181,0.07) 0%, transparent 70%)" }} />
 
+      {/* Back to dashboard */}
+      {isEditing && (
+        <Link
+          to="/parent/dashboard"
+          className="fixed top-5 left-5 z-50 flex items-center gap-1.5 text-sm font-medium transition-all hover:opacity-80"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+        >
+          <ChevronLeft size={15} />
+          Back to Dashboard
+        </Link>
+      )}
+
       <div className="w-full max-w-lg relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -104,7 +127,7 @@ const ParentOnboarding = () => {
             <span className="text-lg font-heading font-bold text-white">BabySitter<span style={{ color: teal }}>Hub</span></span>
           </Link>
           <h1 className="text-2xl font-heading font-bold text-white">
-            {dataLoading ? "Loading your profile…" : "Set up your profile"}
+            {dataLoading ? "Loading your profile…" : isEditing ? "Edit your profile" : "Set up your profile"}
           </h1>
           <p className="text-white/40 mt-1 text-sm">Step {step + 1} of {STEPS.length} — {STEPS[step]}</p>
         </div>
@@ -226,7 +249,7 @@ const ParentOnboarding = () => {
                   className="px-6 py-2.5 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
                   style={{ background: teal }}
                 >
-                  {loading ? "Saving…" : "Save & Go to Dashboard"}
+                  {loading ? "Saving…" : isEditing ? "Save changes" : "Save & Go to Dashboard"}
                 </button>
               )}
             </div>
