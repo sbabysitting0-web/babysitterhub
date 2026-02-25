@@ -1,0 +1,246 @@
+node.exe : npm warn 
+ERESOLVE overriding 
+peer dependency
+At C:\Program Files\no
+dejs\npm.ps1:29 char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (npm warn E   
+ RESOL...peer depe    
+ndency:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+npm warn While 
+resolving: @react-leaf
+let/core@3.0.0
+npm warn Found: 
+react@18.3.1
+npm warn 
+node_modules/react
+npm warn   peer 
+react@">=16.8.0" from 
+@floating-ui/react-dom
+@2.1.4
+npm warn   node_module
+s/@floating-ui/react-d
+om
+npm warn     @floating
+-ui/react-dom@"^2.0.0"
+ from @radix-ui/react-
+popper@1.2.7
+npm warn     node_modu
+les/@radix-ui/react-po
+pper
+npm warn   77 more (@r
+adix-ui/react-accordio
+n, ...)
+npm warn
+npm warn Could not 
+resolve dependency:
+npm warn peer 
+react@"^19.0.0" from @
+react-leaflet/core@3.0
+.0
+npm warn node_modules/
+@react-leaflet/core
+npm warn   @react-leaf
+let/core@"^3.0.0" 
+from 
+react-leaflet@5.0.0
+npm warn   node_module
+s/react-leaflet
+npm warn
+npm warn Conflicting 
+peer dependency: 
+react@19.2.4
+npm warn 
+node_modules/react
+npm warn   peer 
+react@"^19.0.0" from @
+react-leaflet/core@3.0
+.0
+npm warn   node_module
+s/@react-leaflet/core
+npm warn     @react-le
+aflet/core@"^3.0.0" 
+from 
+react-leaflet@5.0.0
+npm warn     node_modu
+les/react-leaflet
+npm warn ERESOLVE 
+overriding peer 
+dependency
+npm warn While 
+resolving: @react-leaf
+let/core@3.0.0
+npm warn Found: 
+react-dom@18.3.1
+npm warn 
+node_modules/react-dom
+npm warn   peer 
+react-dom@">=16.8.0" 
+from @floating-ui/reac
+t-dom@2.1.4
+npm warn   node_module
+s/@floating-ui/react-d
+om
+npm warn     @floating
+-ui/react-dom@"^2.0.0"
+ from @radix-ui/react-
+popper@1.2.7
+npm warn     node_modu
+les/@radix-ui/react-po
+pper
+npm warn   49 more (@r
+adix-ui/react-accordio
+n, ...)
+npm warn
+npm warn Could not 
+resolve dependency:
+npm warn peer 
+react-dom@"^19.0.0" 
+from @react-leaflet/co
+re@3.0.0
+npm warn node_modules/
+@react-leaflet/core
+npm warn   @react-leaf
+let/core@"^3.0.0" 
+from 
+react-leaflet@5.0.0
+npm warn   node_module
+s/react-leaflet
+npm warn
+npm warn Conflicting 
+peer dependency: 
+react-dom@19.2.4
+npm warn 
+node_modules/react-dom
+npm warn   peer 
+react-dom@"^19.0.0" 
+from @react-leaflet/co
+re@3.0.0
+npm warn   node_module
+s/@react-leaflet/core
+npm warn     @react-le
+aflet/core@"^3.0.0" 
+from 
+react-leaflet@5.0.0
+npm warn     node_modu
+les/react-leaflet
+npm error code 
+ERESOLVE
+npm error ERESOLVE 
+could not resolve
+npm error
+npm error While 
+resolving: 
+react-leaflet@5.0.0
+npm error Found: 
+react@18.3.1
+npm error 
+node_modules/react
+npm error   peer 
+react@">=16.8.0" from 
+@floating-ui/react-dom
+@2.1.4
+npm error   node_modul
+es/@floating-ui/react-
+dom
+npm error     @floatin
+g-ui/react-dom@"^2.0.0
+" from @radix-ui/react
+-popper@1.2.7
+npm error     node_mod
+ules/@radix-ui/react-p
+opper
+npm error       @radix
+-ui/react-popper@"1.2.
+7" from @radix-ui/reac
+t-hover-card@1.1.14
+npm error       node_m
+odules/@radix-ui/react
+-hover-card
+npm error         @rad
+ix-ui/react-hover-card
+@"^1.1.14" from the 
+root project
+npm error       4 
+more (@radix-ui/react-
+menu, @radix-ui/react-
+popover, ...)
+npm error   peer 
+react@"^16.8 || ^17.0 
+|| ^18.0 || ^19.0 || 
+^19.0.0-rc" from @radi
+x-ui/react-accordion@1
+.2.11
+npm error   node_modul
+es/@radix-ui/react-acc
+ordion
+npm error     @radix-u
+i/react-accordion@"^1.
+2.11" from the root 
+project
+npm error   76 more (@
+radix-ui/react-alert-d
+ialog, @radix-ui/react
+-arrow, ...)
+npm error
+npm error Could not 
+resolve dependency:
+npm error peer 
+react@"^19.0.0" from 
+react-leaflet@5.0.0
+npm error node_modules
+/react-leaflet
+npm error   react-leaf
+let@"^5.0.0" from the 
+root project
+npm error
+npm error Conflicting 
+peer dependency: 
+react@19.2.4
+npm error 
+node_modules/react
+npm error   peer 
+react@"^19.0.0" from 
+react-leaflet@5.0.0
+npm error   node_modul
+es/react-leaflet
+npm error     react-le
+aflet@"^5.0.0" from 
+the root project
+npm error
+npm error Fix the 
+upstream dependency 
+conflict, or retry
+npm error this 
+command with --force 
+or --legacy-peer-deps
+npm error to accept 
+an incorrect (and 
+potentially broken) 
+dependency resolution.
+npm error
+npm error
+npm error For a full 
+report see:
+npm error C:\Users\kis
+ho\AppData\Local\npm-c
+ache\_logs\2026-02-25T
+07_24_29_354Z-eresolve
+-report.txt
+npm error A complete 
+log of this run can 
+be found in: C:\Users\
+kisho\AppData\Local\np
+m-cache\_logs\2026-02-
+25T07_24_29_354Z-debug
+-0.log
