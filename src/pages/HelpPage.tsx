@@ -5,10 +5,10 @@ import { ChevronDown } from "lucide-react";
 
 const parentFaqs = [
   { q: "How do I find a babysitter?", a: "Search by your area or use the filter to narrow by availability, rate, and qualifications. You can message sitters directly and arrange a meet-and-greet before confirming." },
-  { q: "Are sitters background checked?", a: "Yes. Every sitter on BabySitterHub goes through ID verification and a background/police check before their profile goes live." },
+  { q: "Are sitters background checked?", a: "Yes. Every sitter on BabyCare goes through ID verification and a background/police check before their profile goes live." },
   { q: "How does payment work?", a: "You pay securely via the platform after a booking is confirmed. Funds are only released to the sitter after care is completed." },
   { q: "Can I cancel a booking?", a: "Yes. You can cancel up to 24 hours before the booking for a full refund. Cancellations within 24 hours may incur a small fee — see our Terms for details." },
-  { q: "What if something goes wrong?", a: "Our support team is available 7 days a week. Contact us at hello@babysitterhub.sg and we'll resolve any issue promptly." },
+  { q: "What if something goes wrong?", a: "Our support team is available 7 days a week. Contact us at hello@babycare.sg and we'll resolve any issue promptly." },
 ];
 
 const sitterFaqs = [
@@ -74,7 +74,7 @@ const HelpPage = () => (
         <div className="mt-14 bg-[#0E1E1A] border border-teal/15 rounded-3xl p-8 text-center">
           <p className="text-white font-semibold mb-1">Still need help?</p>
           <p className="text-white/40 text-sm mb-4">Our team replies within a few hours, 7 days a week.</p>
-          <a href="mailto:hello@babysitterhub.sg" className="inline-flex items-center gap-2 bg-teal text-white font-semibold px-6 py-3 rounded-full text-sm hover:bg-teal/90 transition-all">
+          <a href="mailto:hello@babycare.sg" className="inline-flex items-center gap-2 bg-teal text-white font-semibold px-6 py-3 rounded-full text-sm hover:bg-teal/90 transition-all">
             Email us
           </a>
         </div>

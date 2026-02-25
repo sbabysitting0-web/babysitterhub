@@ -46,12 +46,12 @@ const Footer = () => {
             <Link to="/" className="flex items-center gap-2.5 mb-5">
               <img
                 src={newLogo}
-                alt="BabySitterHub"
+                alt="BabyCare"
                 className="h-7 w-auto"
                 style={{ filter: "brightness(0) invert(1)" }}
               />
               <span className="text-base font-heading font-bold text-white">
-                BabySitter<span className="text-teal">Hub</span>
+                Baby<span className="text-teal">Care</span>
               </span>
             </Link>
 
@@ -125,18 +125,18 @@ const Footer = () => {
         {/* Contact row */}
         <div className="border-t border-white/6 pt-8 mb-8">
           <a
-            href="mailto:hello@babysitterhub.sg"
+            href="mailto:hello@babycare.sg"
             className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-teal transition-colors"
           >
             <Mail size={14} />
-            hello@babysitterhub.sg
+            hello@babycare.sg
           </a>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-white/6 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/25">
-            © {new Date().getFullYear()} BabySitterHub. All rights reserved.
+            © {new Date().getFullYear()} BabyCare. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
             <Link to="/terms" className="text-xs text-white/25 hover:text-white/60 transition-colors">Privacy Policy</Link>

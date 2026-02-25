@@ -116,7 +116,7 @@ const AppSection = () => {
                 <div className="bg-teal h-10 flex items-center justify-between px-5 pt-1">
                   <div className="flex items-center gap-1.5">
                     <Heart size={12} className="text-white fill-white" />
-                    <span className="text-white text-[10px] font-bold">BabySitterHub</span>
+                    <span className="text-white text-[10px] font-bold">BabyCare</span>
                   </div>
                   <div className="w-5 h-3 rounded-sm border border-white/50 flex items-center px-0.5">
                     <div className="w-3 h-1.5 bg-white/70 rounded-sm" />

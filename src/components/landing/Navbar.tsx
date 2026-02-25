@@ -101,7 +101,7 @@ const Navbar = () => {
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
           <img
             src={newLogo}
-            alt="BabySitterHub"
+            alt="BabyCare"
             className="w-auto"
             style={{
               height: scrolled ? "26px" : "30px",
@@ -110,7 +110,7 @@ const Navbar = () => {
             }}
           />
           <span className="text-sm sm:text-base font-heading font-bold text-white tracking-tight whitespace-nowrap">
-            BabySitter<span style={{ color: TEAL }}>Hub</span>
+            Baby<span style={{ color: TEAL }}>Care</span>
           </span>
         </Link>
 

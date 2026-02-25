@@ -67,7 +67,7 @@ const FeaturesSection = () => {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={titleRef} className="text-center max-w-xl mx-auto mb-16">
-          <span className="inline-block text-teal text-xs font-bold uppercase tracking-widest mb-3">Why BabySitterHub</span>
+          <span className="inline-block text-teal text-xs font-bold uppercase tracking-widest mb-3">Why BabyCare</span>
           <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-white mb-4">Everything you need to trust your sitter</h2>
           <p className="text-white/40 text-base">We built the safest, simplest way to find family childcare.</p>
         </div>

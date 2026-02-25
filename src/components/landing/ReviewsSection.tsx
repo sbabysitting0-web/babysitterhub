@@ -6,7 +6,7 @@ const reviews = [
     name: "Sarah M.",
     location: "Tampines, Singapore",
     rating: 5,
-    text: "Found an amazing sitter within 2 hours. She was warm, professional and my kids absolutely adore her. BabySitterHub is a lifesaver!",
+    text: "Found an amazing sitter within 2 hours. She was warm, professional and my kids absolutely adore her. BabyCare is a lifesaver!",
     photo: "https://randomuser.me/api/portraits/women/45.jpg",
   },
   {

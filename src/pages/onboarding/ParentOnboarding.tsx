@@ -96,7 +96,7 @@ const ParentOnboarding = () => {
       })));
     }
 
-    toast({ title: "Profile saved!", description: "Welcome to BabySitterHub!" });
+    toast({ title: "Profile saved!", description: "Welcome to BabyCare!" });
     setLoading(false);
     navigate("/parent/dashboard");
   };
@@ -123,8 +123,8 @@ const ParentOnboarding = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 justify-center mb-5">
-            <img src={newLogo} alt="BabySitterHub" className="h-7 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-lg font-heading font-bold text-white">BabySitter<span style={{ color: teal }}>Hub</span></span>
+            <img src={newLogo} alt="BabyCare" className="h-7 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
+            <span className="text-lg font-heading font-bold text-white">Baby<span style={{ color: teal }}>Care</span></span>
           </Link>
           <h1 className="text-2xl font-heading font-bold text-white">
             {dataLoading ? "Loading your profile…" : isEditing ? "Edit your profile" : "Set up your profile"}

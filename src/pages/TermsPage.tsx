@@ -8,7 +8,7 @@ type Tab = typeof tabs[number];
 const terms = `**Effective date:** 1 January 2024
 
 ## 1. Acceptance of Terms
-By accessing or using BabySitterHub ("Platform"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform.
+By accessing or using BabyCare ("Platform"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform.
 
 ## 2. Eligibility
 You must be at least 18 years old to use the Platform. By using it, you represent that you meet this requirement.
@@ -17,7 +17,7 @@ You must be at least 18 years old to use the Platform. By using it, you represen
 You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account.
 
 ## 4. Platform Role
-BabySitterHub is a marketplace connecting families with independent childcare providers. We do not employ sitters and are not liable for the conduct of any user.
+BabyCare is a marketplace connecting families with independent childcare providers. We do not employ sitters and are not liable for the conduct of any user.
 
 ## 5. Payments
 All payments are processed securely through the Platform. Funds are held and released only upon confirmation of completed care.
@@ -26,7 +26,7 @@ All payments are processed securely through the Platform. Funds are held and rel
 We reserve the right to suspend or terminate accounts that violate these Terms without prior notice.
 
 ## 7. Limitation of Liability
-To the maximum extent permitted by law, BabySitterHub shall not be liable for any indirect, incidental, or consequential damages arising from Platform use.
+To the maximum extent permitted by law, BabyCare shall not be liable for any indirect, incidental, or consequential damages arising from Platform use.
 
 ## 8. Governing Law
 These Terms are governed by the laws of Singapore.`;
@@ -46,13 +46,13 @@ We do not sell your data. We share only what is necessary with payment processor
 We retain your data for as long as your account is active or as required by law.
 
 ## 5. Your Rights
-You may request access to, correction of, or deletion of your personal data at any time by emailing hello@babysitterhub.sg.
+You may request access to, correction of, or deletion of your personal data at any time by emailing hello@babycare.sg.
 
 ## 6. Cookies
 We use cookies to maintain sessions and analyse usage. You can disable cookies in your browser settings.
 
 ## 7. Contact
-For privacy queries, contact us at hello@babysitterhub.sg.`;
+For privacy queries, contact us at hello@babycare.sg.`;
 
 const renderMd = (text: string) =>
   text.split("\n").map((line, i) => {

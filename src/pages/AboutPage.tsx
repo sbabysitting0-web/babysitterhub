@@ -24,7 +24,7 @@ const AboutPage = () => (
           Childcare shouldn't be stressful.<br />We made it simple.
         </h1>
         <p className="text-white/50 text-lg leading-relaxed max-w-2xl mx-auto">
-          BabySitterHub was founded in Singapore with one mission: help families find trusted, verified babysitters quickly — and help great sitters find flexible work they love.
+          BabyCare was founded in Singapore with one mission: help families find trusted, verified babysitters quickly — and help great sitters find flexible work they love.
         </p>
       </div>
     </section>

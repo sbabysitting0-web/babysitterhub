@@ -27,7 +27,7 @@ const SpecialNeedsPage = () => (
             Special needs childcare in Singapore
           </h1>
           <p className="text-white/50 text-base max-w-2xl mx-auto leading-relaxed">
-            Every child deserves a sitter who truly understands them. BabySitterHub helps families with children with additional needs find experienced, compassionate carers.
+            Every child deserves a sitter who truly understands them. BabyCare helps families with children with additional needs find experienced, compassionate carers.
           </p>
         </div>
 

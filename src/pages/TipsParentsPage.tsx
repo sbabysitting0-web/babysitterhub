@@ -4,7 +4,7 @@ import { Search, MessageCircle, Shield, Star, CheckCircle, Clock } from "lucide-
 
 const tips = [
   { icon: Search, title: "Write a detailed job posting", body: "Include the ages of your children, the days and hours you need cover, any special requirements, and your preferred communication style. The more detail you give, the better the match." },
-  { icon: Shield, title: "Always verify credentials", body: "Even though all sitters are background checked by BabySitterHub, ask for references from previous families. A brief phone or video call with a reference adds another layer of confidence." },
+  { icon: Shield, title: "Always verify credentials", body: "Even though all sitters are background checked by BabyCare, ask for references from previous families. A brief phone or video call with a reference adds another layer of confidence." },
   { icon: MessageCircle, title: "Arrange a meet-and-greet first", body: "A 20-minute meeting at home or at a café lets you see how the sitter interacts with your children before you commit to a booking. Trust your instincts." },
   { icon: Star, title: "Set clear expectations", body: "Share your house rules, bedtime routines, dietary restrictions, and emergency contacts before the first session. A well-briefed sitter is a confident one." },
   { icon: CheckCircle, title: "Leave a review", body: "After each booking, take two minutes to leave a review. It helps other families and rewards great sitters with better visibility." },
@@ -23,7 +23,7 @@ const TipsParentsPage = () => (
           <span className="inline-block text-teal text-xs font-bold uppercase tracking-widest mb-4">Parents guide</span>
           <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-white mb-5">Tips for parents</h1>
           <p className="text-white/50 text-base max-w-xl mx-auto">
-            Make the most of BabySitterHub. Here's how to find, vet, and work brilliantly with your babysitter.
+            Make the most of BabyCare. Here's how to find, vet, and work brilliantly with your babysitter.
           </p>
         </div>
 

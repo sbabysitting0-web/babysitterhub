@@ -101,8 +101,8 @@ const Signup = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 justify-center mb-6">
-            <img src={newLogo} alt="BabySitterHub" className="h-8 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-xl font-heading font-bold text-white">BabySitter<span style={{ color: "#3DBEB5" }}>Hub</span></span>
+            <img src={newLogo} alt="BabyCare" className="h-8 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
+            <span className="text-xl font-heading font-bold text-white">Baby<span style={{ color: "#3DBEB5" }}>Care</span></span>
           </Link>
           <h1 className="text-2xl font-heading font-bold text-white">Create your account</h1>
           <p className="text-white/40 mt-1 text-sm">Free to join. No credit card needed.</p>
