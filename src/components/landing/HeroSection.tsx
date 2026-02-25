@@ -77,8 +77,14 @@ const HeroSection = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden min-h-[92vh] flex items-center"
-      style={{ background: "#080F0D" }}
+      className="relative overflow-hidden flex items-center"
+      style={{
+        background: "#080F0D",
+        minHeight: "92svh",
+        // Fallback for older iOS Safari that doesn't support svh
+        // @ts-expect-error non-standard webkit property
+        WebkitMinHeight: "-webkit-fill-available",
+      }}
     >
       {/* ── Ambient blobs ── */}
       <div

@@ -114,11 +114,11 @@ const SafetySection = () => {
             <img
               src="https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=800&q=85"
               alt="Safe babysitter with children"
-              className="w-full h-[420px] object-cover"
+              className="w-full h-[320px] sm:h-[420px] object-cover"
               style={{ filter: "brightness(0.85) saturate(0.85)" }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#080F0D]/65 via-transparent to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6 bg-[#0E1E1A]/85 backdrop-blur-sm border border-teal/15 rounded-2xl px-5 py-4 flex items-center gap-4">
+            <div className="absolute bottom-6 left-6 right-6 bg-[#0E1E1A]/85 backdrop-blur-sm border border-teal/15 rounded-2xl px-5 py-4 flex items-center gap-4" style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
               <div className="w-10 h-10 rounded-full bg-teal/15 flex items-center justify-center flex-shrink-0">
                 <Shield className="w-5 h-5 text-teal" />
               </div>

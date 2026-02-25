@@ -76,7 +76,11 @@ const Navbar = () => {
   return (
     <div
       className="fixed top-0 left-0 right-0 z-[2000] flex flex-col items-center"
-      style={{ pointerEvents: "none" }}
+      style={{
+        pointerEvents: "none",
+        // Respect iOS notch / Dynamic Island safe area
+        paddingTop: "env(safe-area-inset-top, 0px)",
+      }}
     >
       {/* ── Main bar ── */}
       <div
@@ -88,7 +92,7 @@ const Navbar = () => {
           borderRadius: scrolled ? "9999px" : "0 0 20px 20px",
           background: scrolled ? "rgba(14,30,26,0.95)" : "rgba(14,30,26,0.80)",
           backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)", // Required for iOS Safari
           border: scrolled ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(255,255,255,0.06)",
           borderTop: scrolled ? undefined : "none",
           boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.4)" : "none",
@@ -242,6 +246,7 @@ const Navbar = () => {
             background: "rgba(10,23,20,0.98)",
             border: "1px solid rgba(61,190,181,0.14)",
             backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)", // Required for iOS Safari
             pointerEvents: "auto",
           }}
         >

@@ -23,7 +23,11 @@ const Footer = () => {
   return (
     <footer
       className="relative overflow-hidden"
-      style={{ background: "#060C0A" }}
+      style={{
+        background: "#060C0A",
+        // Respect iOS home indicator safe area
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
     >
       {/* Top separator line */}
       <div

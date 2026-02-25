@@ -89,15 +89,60 @@
 @layer base {
   * {
     @apply border-border;
+    /* Remove iOS tap highlight flash on all interactive elements */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    /* Smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent iOS elastic overscroll showing white/dark background */
+    overscroll-behavior: none;
+    /* Use dvh (dynamic viewport height) where supported — falls back gracefully */
+    height: -webkit-fill-available;
   }
 
   body {
     @apply bg-background text-foreground font-body antialiased;
     overflow-x: hidden;
+    /* Prevent horizontal scroll on iOS from overflowing elements */
+    position: relative;
+    /* Respect iOS safe areas (notch, home bar) */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    /* Smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+    /* Prevent iOS from auto-resizing text */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Prevent iOS auto-zoom on inputs (requires font-size >= 16px on focus) */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  @media screen and (max-width: 640px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Fix iOS button appearance reset */
+  button, [type="button"], [type="submit"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Smooth touch scrolling for scrollable containers on iOS */
+  [class*="overflow-"] {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
