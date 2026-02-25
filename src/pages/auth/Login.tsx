@@ -5,6 +5,41 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import newLogo from "@/assets/new logo.png";
 
+/**
+ * Attempt Supabase login with automatic retry + timeout.
+ * Mobile networks (especially on iOS/Android) can have transient failures,
+ * so we retry up to 3 times with increasing delays.
+ */
+async function signInWithRetry(email: string, password: string, maxRetries = 3) {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Use AbortController for a clean per-attempt timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      clearTimeout(timeoutId);
+      return result; // success or auth error — both are valid responses
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[Login] Attempt ${attempt}/${maxRetries} failed:`, lastError.message);
+
+      if (attempt < maxRetries) {
+        // Wait before retrying: 1s, 2s, 3s...
+        await new Promise((r) => setTimeout(r, attempt * 1000));
+      }
+    }
+  }
+
+  throw lastError ?? new Error("Login failed after multiple attempts");
+}
+
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,8 +65,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Read directly from DOM refs — this captures autofill on mobile browsers
-    // (react-hook-form's register can miss autofilled values on mobile)
+    // Read directly from DOM refs — captures autofill on all mobile browsers
     const email = (emailRef.current?.value ?? "").trim();
     const password = passwordRef.current?.value ?? "";
 
@@ -44,14 +78,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Wrap in a timeout so mobile users don't stare at "Signing in…" forever
-      const timeoutMs = 15000;
-      const authPromise = supabase.auth.signInWithPassword({ email, password });
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Request timed out. Please check your internet connection and try again.")), timeoutMs)
-      );
-
-      const { data: authData, error } = await Promise.race([authPromise, timeoutPromise]);
+      const { data: authData, error } = await signInWithRetry(email, password);
 
       if (error) {
         console.error("[Login] Auth error:", error.message);
@@ -76,13 +103,20 @@ const Login = () => {
       else if (metaRole === "babysitter") navigate("/babysitter/dashboard");
       else navigate("/parent/dashboard");
     } catch (err: unknown) {
-      console.error("[Login] Unexpected error:", err);
+      console.error("[Login] All attempts failed:", err);
       const message = err instanceof Error ? err.message : "Please try again.";
-      // Detect common mobile network errors
-      const isNetworkError = message.includes("Failed to fetch") || message.includes("NetworkError") || message.includes("network");
+      const isNetworkError =
+        message.includes("Failed to fetch") ||
+        message.includes("NetworkError") ||
+        message.includes("network") ||
+        message.includes("aborted") ||
+        message.includes("timed out") ||
+        message.includes("timeout");
       toast({
         title: isNetworkError ? "Connection error" : "Something went wrong",
-        description: isNetworkError ? "Unable to reach the server. Please check your internet connection." : message,
+        description: isNetworkError
+          ? "Unable to reach the server. Please check your internet connection and try again."
+          : message,
         variant: "destructive",
       });
     } finally {
@@ -124,6 +158,7 @@ const Login = () => {
                 ref={emailRef}
                 type="email"
                 autoComplete="email"
+                inputMode="email"
                 placeholder="you@example.com"
                 className={inputClass}
                 style={{ fontSize: "16px" }}
