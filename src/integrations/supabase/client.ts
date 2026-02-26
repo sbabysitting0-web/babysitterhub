@@ -2,11 +2,19 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Hardcoded fallbacks because .env is not tracked by git, so Vercel builds
-// would otherwise get `undefined`. These are publishable (anon) keys — safe to commit.
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
-  "https://utqlshqdbefcgoaigmnz.supabase.co";
+// Detect if running on the deployed Vercel site (not localhost)
+const isDeployed =
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1';
+
+// When deployed, route through Vercel's rewrite proxy at /supabase/*
+// This fixes mobile carriers/ISPs that block direct connections to supabase.co
+// When running locally, connect to Supabase directly.
+const SUPABASE_URL = isDeployed
+  ? `${window.location.origin}/supabase`
+  : (import.meta.env.VITE_SUPABASE_URL || "https://utqlshqdbefcgoaigmnz.supabase.co");
+
 const SUPABASE_PUBLISHABLE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cWxzaHFkYmVmY2dvYWlnbW56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NTYyNDksImV4cCI6MjA4NzQzMjI0OX0.ecn0RpTXaVbRSTEwr6JXuUNfoNLhbraTUYpLxr_Yfgw";
@@ -19,8 +27,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    // Note: Do NOT set storage: localStorage explicitly.
-    // That causes iOS Safari login to fail due to ITP (Intelligent Tracking Prevention).
-    // Supabase's default storage handles cross-browser/mobile correctly.
   }
 });
