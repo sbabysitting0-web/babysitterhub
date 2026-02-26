@@ -96,8 +96,8 @@
   html {
     /* Smooth momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
-    /* Prevent iOS elastic overscroll showing white/dark background */
-    overscroll-behavior: none;
+    /* Only prevent horizontal overscroll — allow vertical pull-to-refresh */
+    overscroll-behavior-x: none;
     /* Use dvh (dynamic viewport height) where supported — falls back gracefully */
     height: -webkit-fill-available;
   }
