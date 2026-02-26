@@ -3,6 +3,10 @@
         {
             "source": "/supabase/:path*",
             "destination": "https://utqlshqdbefcgoaigmnz.supabase.co/:path*"
+        },
+        {
+            "source": "/((?!assets/).*)",
+            "destination": "/index.html"
         }
     ]
 }
