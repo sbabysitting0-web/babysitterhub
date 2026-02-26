@@ -7,31 +7,23 @@ import newLogo from "@/assets/new logo.png";
 
 /**
  * Attempt Supabase login with automatic retry + timeout.
- * Mobile networks (especially on iOS/Android) can have transient failures,
- * so we retry up to 3 times with increasing delays.
  */
 async function signInWithRetry(email: string, password: string, maxRetries = 3) {
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Use AbortController for a clean per-attempt timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const result = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await supabase.auth.signInWithPassword({ email, password });
 
       clearTimeout(timeoutId);
-      return result; // success or auth error — both are valid responses
+      return result;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       console.warn(`[Login] Attempt ${attempt}/${maxRetries} failed:`, lastError.message);
-
       if (attempt < maxRetries) {
-        // Wait before retrying: 1s, 2s, 3s...
         await new Promise((r) => setTimeout(r, attempt * 1000));
       }
     }
@@ -47,7 +39,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  // Use refs to reliably capture autofill values on mobile browsers
+  // Google loading
+  const [googleLoading, setGoogleLoading] = useState(false);
+
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -64,8 +58,6 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Read directly from DOM refs — captures autofill on all mobile browsers
     const email = (emailRef.current?.value ?? "").trim();
     const password = passwordRef.current?.value ?? "";
 
@@ -81,7 +73,6 @@ const Login = () => {
       const { data: authData, error } = await signInWithRetry(email, password);
 
       if (error) {
-        console.error("[Login] Auth error:", error.message);
         let description = error.message;
         if (error.message === "Email not confirmed") {
           description = "Please confirm your email before logging in. Check your inbox.";
@@ -103,7 +94,6 @@ const Login = () => {
       else if (metaRole === "babysitter") navigate("/babysitter/dashboard");
       else navigate("/parent/dashboard");
     } catch (err: unknown) {
-      console.error("[Login] All attempts failed:", err);
       const message = err instanceof Error ? err.message : "Please try again.";
       const isNetworkError =
         message.includes("Failed to fetch") ||
@@ -122,6 +112,22 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // --- Google OAuth ---
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+      setGoogleLoading(false);
+    }
+    // On success Supabase redirects the browser — no need to setLoading(false)
   };
 
   const inputClass =
@@ -151,6 +157,40 @@ const Login = () => {
         </div>
 
         <div className="rounded-2xl p-8" style={{ background: "#0E1E1A", border: "1px solid rgba(255,255,255,0.08)" }}>
+
+          {/* ── Social / Quick-access buttons ── */}
+          <div className="space-y-3 mb-6">
+            {/* Continue with Google */}
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={googleLoading}
+              className="w-full flex items-center justify-center gap-3 py-3 rounded-full font-semibold text-sm transition-all hover:brightness-110 disabled:opacity-50"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "white", fontSize: "15px" }}
+            >
+              {googleLoading ? (
+                <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+                  <path d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.2-2.7-.5-4z" fill="#FFC107"/>
+                  <path d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 16.3 3 9.7 7.9 6.3 14.7z" fill="#FF3D00"/>
+                  <path d="M24 45c5.5 0 10.5-2 14.2-5.3l-6.6-5.5C29.7 35.9 27 37 24 37c-6.1 0-10.7-3.1-11.8-8.5l-7 5.4C8.2 40.8 15.5 45 24 45z" fill="#4CAF50"/>
+                  <path d="M44.5 20H24v8.5h11.8c-.7 2.8-2.8 5.3-5.3 6.9l6.6 5.5C41 37.5 45 32 45 24c0-1.4-.2-2.7-.5-4z" fill="#1976D2"/>
+                </svg>
+              )}
+              Continue with Google
+            </button>
+
+          </div>
+
+          {/* ── Divider ── */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>or continue with password</span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+          </div>
+
+          {/* ── Email + Password form ── */}
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-white/70">Email</label>

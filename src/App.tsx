@@ -12,6 +12,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import AuthCallback from "./pages/auth/AuthCallback";
+import SelectRole from "./pages/auth/SelectRole";
 import ParentOnboarding from "./pages/onboarding/ParentOnboarding";
 import BabysitterOnboarding from "./pages/onboarding/BabysitterOnboarding";
 import SearchSitters from "./pages/parent/SearchSitters";
@@ -48,6 +50,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/select-role" element={<SelectRole />} />
             <Route path="/babysitters" element={<SearchSitters />} />
             <Route path="/babysitters/:id" element={<SitterProfile />} />
             <Route path="/about" element={<AboutPage />} />
