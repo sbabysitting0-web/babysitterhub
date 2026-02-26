@@ -1,0 +1,10 @@
+?? git_debug.txt
+---  
+de70a8f new
+62bc809 new
+a71bc8a new
+e830c71 feat: Add initial landing page components, global styling, and Supabase client integration, along with `index.html` viewport adjustments.
+fd5695b feat: add core landing page components, authentication, onboarding, and informational pages.
+---  
+origin	https://github.com/sbabysitting0-web/babysitterhub.git (fetch)
+origin	https://github.com/sbabysitting0-web/babysitterhub.git (push)
