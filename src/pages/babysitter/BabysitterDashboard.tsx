@@ -190,7 +190,7 @@ const BabysitterDashboard = () => {
           </div>
         </header>
 
-        <div className="px-4 sm:px-6 lg:px-8 max-w-[1080px]">
+        <div className="px-4 sm:px-6 lg:px-8 max-w-[1080px] pt-4">
           {/* Verification banner */}
           {profile && !!!(profile.name && profile.bio && profile.city && profile.hourly_rate) && (
             <div className="flex items-center gap-3 rounded-2xl px-4 py-3 mb-5" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}>
