@@ -61,10 +61,18 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
     setDropOpen(false);
     setMobileOpen(false);
-    navigate("/");
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {
+      // LockManager timeout — clear storage manually
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-")) localStorage.removeItem(key);
+      }
+    }
+    window.location.href = "/";
   };
 
   const dashboardPath = role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard";

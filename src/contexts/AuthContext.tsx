@@ -130,7 +130,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // scope: 'local' avoids server roundtrip — faster & avoids lock contention
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (err) {
+      // Navigator LockManager timeout — force cleanup manually
+      console.warn("[Auth] signOut lock timeout, forcing cleanup:", err);
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-")) localStorage.removeItem(key);
+      }
+    }
+    // Always clear state and redirect
+    setUser(null);
+    setSession(null);
+    setRole(null);
+    window.location.href = "/";
   };
 
   return (
