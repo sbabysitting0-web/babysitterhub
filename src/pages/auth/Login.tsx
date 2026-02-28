@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { signInWithGoogleDirect } from "@/lib/googleSignIn";
 
 /**
  * Attempt Supabase login with automatic retry + timeout.
@@ -113,20 +114,39 @@ const Login = () => {
     }
   };
 
-  // --- Google OAuth ---
+  // --- Google Sign-In (direct, no redirect to supabase.co) ---
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) {
-      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+    try {
+      const result = await signInWithGoogleDirect();
+      if (!result.success) {
+        toast({ title: "Google sign-in failed", description: result.error || "Please try again.", variant: "destructive" });
+        setGoogleLoading(false);
+        return;
+      }
+
+      // Session is now set — route based on role
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (!user) {
+        setGoogleLoading(false);
+        return;
+      }
+
+      const metaRole = user.user_metadata?.role as string | undefined;
+      if (metaRole === "admin") navigate("/admin");
+      else if (metaRole === "babysitter") navigate("/babysitter/dashboard");
+      else if (metaRole === "parent") navigate("/parent/dashboard");
+      else navigate("/select-role");
+    } catch (err) {
+      toast({
+        title: "Google sign-in failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setGoogleLoading(false);
     }
-    // On success Supabase redirects the browser — no need to setLoading(false)
   };
 
   const inputClass =
