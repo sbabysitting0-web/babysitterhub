@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut, LayoutDashboard, ChevronDown, Menu, X } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
 
 const NAV_LINKS = [
   { label: "How it works", href: "/", hash: "how-it-works" },
@@ -101,19 +100,10 @@ const Navbar = () => {
         }}
         className="flex items-center justify-between gap-3"
       >
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-          <img
-            src={newLogo}
-            alt="BabyCare"
-            className="w-auto"
-            style={{
-              height: scrolled ? "26px" : "30px",
-              filter: "brightness(0) invert(1)",
-              transition: "height 0.5s ease",
-            }}
-          />
-          <span className="text-sm sm:text-base font-heading font-bold text-white tracking-tight whitespace-nowrap">
+        {/* Brand name */}
+        <Link to="/" className="flex items-center flex-shrink-0">
+          <span className="text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight whitespace-nowrap"
+            style={{ textShadow: "0 0 20px rgba(61,190,181,0.25)" }}>
             Baby<span style={{ color: TEAL }}>Care</span>
           </span>
         </Link>

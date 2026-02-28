@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
 
 /**
  * Attempt Supabase login with automatic retry + timeout.
@@ -148,9 +147,11 @@ const Login = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2.5 justify-center mb-6">
-            <img src={newLogo} alt="BabyCare" className="h-8 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-xl font-heading font-bold text-white">Baby<span style={{ color: "#3DBEB5" }}>Care</span></span>
+          <Link to="/" className="inline-flex items-center justify-center mb-6">
+            <span className="text-3xl font-heading font-extrabold text-white"
+              style={{ textShadow: "0 0 24px rgba(61,190,181,0.3)" }}>
+              Baby<span style={{ color: "#3DBEB5" }}>Care</span>
+            </span>
           </Link>
           <h1 className="text-2xl font-heading font-bold text-white">Welcome back</h1>
           <p className="text-white/40 mt-1 text-sm">Sign in to your account</p>

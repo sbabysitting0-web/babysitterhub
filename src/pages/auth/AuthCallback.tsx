@@ -1,9 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Handles OAuth / magic-link redirects.
+ *
+ * Uses onAuthStateChange to WAIT for Supabase to finish the token exchange —
+ * fixes mobile browsers where getSession() returns null immediately after redirect.
  *
  * Google OAuth flow:
  *  - New user  → no role in metadata → send to /select-role
@@ -13,24 +16,27 @@ import { supabase } from "@/integrations/supabase/client";
  */
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const [slow, setSlow] = useState(false);
 
   useEffect(() => {
-    const handle = async () => {
-      const { data, error } = await supabase.auth.getSession();
+    let settled = false;
 
-      if (error || !data.session) {
-        console.error("[AuthCallback] No session:", error?.message);
+    // Show "still working…" message after 4 s
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
+
+    // Hard timeout — if after 12 s we still have no session, send to login
+    const hardTimeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
         navigate("/login");
-        return;
       }
+    }, 12000);
 
-      const user = data.session.user;
-
+    const routeUser = async (userId: string, userMeta: Record<string, unknown>) => {
       // Check role from user_metadata first (fastest)
-      const metaRole = user.user_metadata?.role as string | undefined;
+      const metaRole = userMeta?.role as string | undefined;
 
       if (metaRole) {
-        // Returning user — route to their dashboard
         if (metaRole === "admin") navigate("/admin");
         else if (metaRole === "babysitter") navigate("/babysitter/dashboard");
         else navigate("/parent/dashboard");
@@ -41,11 +47,10 @@ const AuthCallback = () => {
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (roleRow?.role) {
-        // Found in DB — role was set before metadata was synced
         const dbRole = roleRow.role as string;
         if (dbRole === "admin") navigate("/admin");
         else if (dbRole === "babysitter") navigate("/babysitter/dashboard");
@@ -57,7 +62,50 @@ const AuthCallback = () => {
       navigate("/select-role");
     };
 
-    handle();
+    // Listen for the session to arrive — this is the key fix for mobile.
+    // On mobile, the OAuth URL token hasn't been exchanged yet when the
+    // component mounts, so getSession() returns null. onAuthStateChange
+    // waits for Supabase to finish the exchange before firing.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (settled) return;
+
+        if (session?.user) {
+          settled = true;
+          clearTimeout(slowTimer);
+          clearTimeout(hardTimeout);
+          await routeUser(session.user.id, session.user.user_metadata ?? {});
+          return;
+        }
+
+        // SIGNED_OUT or no session after token exchange — go back to login
+        if (event === "SIGNED_OUT") {
+          settled = true;
+          clearTimeout(slowTimer);
+          clearTimeout(hardTimeout);
+          navigate("/login");
+        }
+      }
+    );
+
+    // Also try getSession() immediately in case session is already available
+    // (e.g. desktop browsers where it's instant)
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (settled) return;
+      if (!error && data.session?.user) {
+        settled = true;
+        clearTimeout(slowTimer);
+        clearTimeout(hardTimeout);
+        subscription.unsubscribe();
+        routeUser(data.session.user.id, data.session.user.user_metadata ?? {});
+      }
+    });
+
+    return () => {
+      clearTimeout(slowTimer);
+      clearTimeout(hardTimeout);
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   return (
@@ -70,6 +118,11 @@ const AuthCallback = () => {
         style={{ borderColor: "rgba(61,190,181,0.2)", borderTopColor: "#3DBEB5" }}
       />
       <p className="text-white/50 text-sm">Signing you in…</p>
+      {slow && (
+        <p className="text-white/30 text-xs mt-1">
+          This is taking a moment — please wait…
+        </p>
+      )}
     </div>
   );
 };

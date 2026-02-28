@@ -35,7 +35,7 @@ const HeroSection = () => {
     setInitial(img, { transform: "translateX(60px) scale(0.95)" });
     cards.forEach((c) => setInitial(c, { transform: "translateY(30px)" }));
 
-    const animate = (el: HTMLElement | null, delay: number, duration = "0.7s") => {
+    const animate = (el: HTMLElement | null, delay: number, duration = "0.45s") => {
       if (!el) return;
       setTimeout(() => {
         el.style.transition = `opacity ${duration} ease, transform ${duration} ease`;
@@ -44,13 +44,13 @@ const HeroSection = () => {
       }, delay);
     };
 
-    animate(badge, 100);
-    animate(headline, 300);
-    animate(sub, 550);
-    animate(cta, 700);
-    animate(img, 400, "0.8s");
-    animate(card1Ref.current, 600);
-    animate(card2Ref.current, 750);
+    animate(badge, 0);
+    animate(headline, 80);
+    animate(sub, 200);
+    animate(cta, 320);
+    animate(img, 150, "0.5s");
+    animate(card1Ref.current, 280);
+    animate(card2Ref.current, 420);
 
     const styleTag = document.createElement("style");
     styleTag.textContent = `@keyframes floatY { from { transform: translateY(0); } to { transform: translateY(-12px); } }`;
@@ -59,7 +59,7 @@ const HeroSection = () => {
     setTimeout(() => {
       if (card1Ref.current) card1Ref.current.style.animation = "floatY 3.5s ease-in-out 0s infinite alternate";
       if (card2Ref.current) card2Ref.current.style.animation = "floatY 4.2s ease-in-out 0.8s infinite alternate";
-    }, 1000);
+    }, 600);
 
     const handleScroll = () => {
       const progress = window.scrollY / (sectionRef.current?.offsetHeight || 1);

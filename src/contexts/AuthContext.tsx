@@ -68,23 +68,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // 3. Final fallback: which profile table has a row?
-      const { data: parentRow } = await supabase
-        .from("parent_profiles")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (parentRow) {
+      // 3. Final fallback: which profile table has a row? (with 2 s timeout)
+      const timeout2 = new Promise<{ data: null }>((resolve) =>
+        setTimeout(() => resolve({ data: null }), 2000),
+      );
+
+      const [parentResult, sitterResult] = await Promise.all([
+        Promise.race([
+          supabase.from("parent_profiles").select("user_id").eq("user_id", userId).maybeSingle(),
+          timeout2,
+        ]),
+        Promise.race([
+          supabase.from("babysitter_profiles").select("user_id").eq("user_id", userId).maybeSingle(),
+          timeout2,
+        ]),
+      ]);
+
+      if (parentResult?.data) {
         setRole("parent");
         return;
       }
-
-      const { data: sitterRow } = await supabase
-        .from("babysitter_profiles")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (sitterRow) {
+      if (sitterResult?.data) {
         setRole("babysitter");
         return;
       }
