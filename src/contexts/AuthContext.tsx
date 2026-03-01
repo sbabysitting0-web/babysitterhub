@@ -68,23 +68,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // 3. Final fallback: which profile table has a row?
-      const { data: parentRow } = await supabase
-        .from("parent_profiles")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (parentRow) {
+      // 3. Final fallback: which profile table has a row? (with 2 s timeout)
+      const timeout2 = new Promise<{ data: null }>((resolve) =>
+        setTimeout(() => resolve({ data: null }), 2000),
+      );
+
+      const [parentResult, sitterResult] = await Promise.all([
+        Promise.race([
+          supabase.from("parent_profiles").select("user_id").eq("user_id", userId).maybeSingle(),
+          timeout2,
+        ]),
+        Promise.race([
+          supabase.from("babysitter_profiles").select("user_id").eq("user_id", userId).maybeSingle(),
+          timeout2,
+        ]),
+      ]);
+
+      if (parentResult?.data) {
         setRole("parent");
         return;
       }
-
-      const { data: sitterRow } = await supabase
-        .from("babysitter_profiles")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (sitterRow) {
+      if (sitterResult?.data) {
         setRole("babysitter");
         return;
       }
@@ -126,7 +130,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // scope: 'local' avoids server roundtrip — faster & avoids lock contention
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (err) {
+      // Navigator LockManager timeout — force cleanup manually
+      console.warn("[Auth] signOut lock timeout, forcing cleanup:", err);
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-")) localStorage.removeItem(key);
+      }
+    }
+    // Always clear state and redirect
+    setUser(null);
+    setSession(null);
+    setRole(null);
+    window.location.href = "/";
   };
 
   return (

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Baby, User } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
 
 type Role = "parent" | "babysitter";
 
@@ -16,54 +15,70 @@ const SelectRole = () => {
   const handleContinue = async () => {
     setLoading(true);
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const user = sessionData.session?.user;
+    // 10-second hard timeout so the spinner never freezes on mobile
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      toast({ title: "Taking too long", description: "Please try again.", variant: "destructive" });
+    }, 10000);
 
-    if (!user) {
-      toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
-      navigate("/login");
-      return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+
+      if (!user) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        navigate("/login");
+        return;
+      }
+
+      const userId = user.id;
+      const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? "";
+
+      // Fire all DB writes in parallel — much faster on mobile than sequential awaits
+      await Promise.all([
+        // Save role in user_metadata
+        supabase.auth.updateUser({ data: { role } }),
+
+        // Upsert user_roles table
+        supabase
+          .from("user_roles")
+          .upsert({ user_id: userId, role }, { onConflict: "user_id" })
+          .then(({ error }) => { if (error) console.warn("user_roles upsert:", error.message); }),
+
+        // Ensure users record (try RPC first, fall back to direct upsert)
+        supabase.rpc("ensure_user_record", { p_role: role }).then(({ error: rpcError }) => {
+          if (rpcError) {
+            return supabase
+              .from("users")
+              .upsert({ id: userId, role }, { onConflict: "id" })
+              .then(({ error }) => { if (error) console.warn("users upsert:", error.message); });
+          }
+        }),
+
+        // Create profile row
+        role === "parent"
+          ? supabase
+              .from("parent_profiles")
+              .upsert({ user_id: userId, name }, { onConflict: "user_id" })
+              .then(({ error }) => { if (error) console.warn("parent_profiles upsert:", error.message); })
+          : supabase
+              .from("babysitter_profiles")
+              .upsert({ user_id: userId, name }, { onConflict: "user_id" })
+              .then(({ error }) => { if (error) console.warn("babysitter_profiles upsert:", error.message); }),
+      ]);
+
+      clearTimeout(timeoutId);
+      setLoading(false);
+
+      // Navigate to onboarding / dashboard
+      if (role === "parent") navigate("/onboarding/parent");
+      else navigate("/babysitter/dashboard");
+    } catch (err) {
+      clearTimeout(timeoutId);
+      setLoading(false);
+      console.error("[SelectRole] handleContinue error:", err);
+      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
     }
-
-    const userId = user.id;
-    const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? "";
-
-    // 1. Save role in user_metadata
-    await supabase.auth.updateUser({ data: { role } });
-
-    // 2. Upsert user_roles table
-    const { error: roleError } = await supabase
-      .from("user_roles")
-      .upsert({ user_id: userId, role }, { onConflict: "user_id" });
-    if (roleError) console.warn("user_roles upsert:", roleError.message);
-
-    // 3. Ensure users record
-    const { error: rpcError } = await supabase.rpc("ensure_user_record", { p_role: role });
-    if (rpcError) {
-      const { error: usersError } = await supabase
-        .from("users")
-        .upsert({ id: userId, role }, { onConflict: "id" });
-      if (usersError) console.warn("users upsert:", usersError.message);
-    }
-
-    // 4. Create profile row
-    if (role === "parent") {
-      const { error } = await supabase
-        .from("parent_profiles")
-        .upsert({ user_id: userId, name }, { onConflict: "user_id" });
-      if (error) console.warn("parent_profiles upsert:", error.message);
-    } else {
-      const { error } = await supabase
-        .from("babysitter_profiles")
-        .upsert({ user_id: userId, name }, { onConflict: "user_id" });
-      if (error) console.warn("babysitter_profiles upsert:", error.message);
-    }
-
-    setLoading(false);
-
-    // Navigate to onboarding / dashboard
-    if (role === "parent") navigate("/onboarding/parent");
-    else navigate("/babysitter/dashboard");
   };
 
   const roles: { value: Role; label: string; desc: string; icon: React.ReactNode }[] = [
@@ -82,9 +97,9 @@ const SelectRole = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2.5 justify-center mb-6">
-            <img src={newLogo} alt="BabyCare" className="h-8 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-xl font-heading font-bold text-white">
+          <div className="inline-flex items-center justify-center mb-6">
+            <span className="text-3xl font-heading font-extrabold text-white"
+              style={{ textShadow: "0 0 24px rgba(61,190,181,0.3)" }}>
               Baby<span style={{ color: "#3DBEB5" }}>Care</span>
             </span>
           </div>

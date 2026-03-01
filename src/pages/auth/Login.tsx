@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
+import { signInWithGoogleDirect } from "@/lib/googleSignIn";
 
 /**
  * Attempt Supabase login with automatic retry + timeout.
@@ -114,20 +114,39 @@ const Login = () => {
     }
   };
 
-  // --- Google OAuth ---
+  // --- Google Sign-In (direct, no redirect to supabase.co) ---
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) {
-      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
+    try {
+      const result = await signInWithGoogleDirect();
+      if (!result.success) {
+        toast({ title: "Google sign-in failed", description: result.error || "Please try again.", variant: "destructive" });
+        setGoogleLoading(false);
+        return;
+      }
+
+      // Session is now set — route based on role
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (!user) {
+        setGoogleLoading(false);
+        return;
+      }
+
+      const metaRole = user.user_metadata?.role as string | undefined;
+      if (metaRole === "admin") navigate("/admin");
+      else if (metaRole === "babysitter") navigate("/babysitter/dashboard");
+      else if (metaRole === "parent") navigate("/parent/dashboard");
+      else navigate("/select-role");
+    } catch (err) {
+      toast({
+        title: "Google sign-in failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setGoogleLoading(false);
     }
-    // On success Supabase redirects the browser — no need to setLoading(false)
   };
 
   const inputClass =
@@ -148,9 +167,11 @@ const Login = () => {
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2.5 justify-center mb-6">
-            <img src={newLogo} alt="BabyCare" className="h-8 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-xl font-heading font-bold text-white">Baby<span style={{ color: "#3DBEB5" }}>Care</span></span>
+          <Link to="/" className="inline-flex items-center justify-center mb-6">
+            <span className="text-3xl font-heading font-extrabold text-white"
+              style={{ textShadow: "0 0 24px rgba(61,190,181,0.3)" }}>
+              Baby<span style={{ color: "#3DBEB5" }}>Care</span>
+            </span>
           </Link>
           <h1 className="text-2xl font-heading font-bold text-white">Welcome back</h1>
           <p className="text-white/40 mt-1 text-sm">Sign in to your account</p>

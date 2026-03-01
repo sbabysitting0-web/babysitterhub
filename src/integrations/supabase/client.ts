@@ -27,5 +27,14 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
+    // Bypass Navigator LockManager — it times out on mobile browsers
+    // (especially after Google sign-in popups) causing all auth operations
+    // to fail with "Acquiring an exclusive Navigator LockManager lock timed out".
+    // This is safe for single-tab mobile usage.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+      return await fn();
+    },
   }
 });

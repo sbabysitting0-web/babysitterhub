@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import AuthCallback from "./pages/auth/AuthCallback";
+import GoogleCallback from "./pages/auth/GoogleCallback";
 import SelectRole from "./pages/auth/SelectRole";
 import ParentOnboarding from "./pages/onboarding/ParentOnboarding";
 import BabysitterOnboarding from "./pages/onboarding/BabysitterOnboarding";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/google-callback" element={<GoogleCallback />} />
             <Route path="/select-role" element={<SelectRole />} />
             <Route path="/babysitters" element={<SearchSitters />} />
             <Route path="/babysitters/:id" element={<SitterProfile />} />
