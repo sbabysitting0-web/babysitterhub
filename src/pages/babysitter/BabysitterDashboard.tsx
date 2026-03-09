@@ -9,7 +9,7 @@ import { getCurrencyForCity } from "@/lib/utils";
 import {
   Calendar, MessageCircle, Star, User, CheckCircle, XCircle,
   Edit3, Save, DollarSign, Clock, Home, Settings, LogOut,
-  Bell, Shield, TrendingUp, CalendarCheck, LucideIcon,
+  Bell, Shield, TrendingUp, CalendarCheck, LucideIcon, Briefcase,
 } from "lucide-react";
 import newLogo from "@/assets/new logo.png";
 
@@ -140,6 +140,7 @@ const BabysitterDashboard = () => {
         </div>
         <nav className="flex-1 px-3 space-y-0.5">
           <SidebarLink icon={Home} label="Dashboard" href="/babysitter/dashboard" active />
+          <SidebarLink icon={Briefcase} label="Babysitting Jobs" href="/babysitting-jobs" />
           <SidebarLink icon={MessageCircle} label="Messages" href="/parent/inbox" />
         </nav>
         <div className="px-3 pb-5">

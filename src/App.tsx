@@ -27,12 +27,15 @@ import ReviewPage from "./pages/parent/ReviewPage";
 import BabysitterDashboard from "./pages/babysitter/BabysitterDashboard";
 import AdminPanel from "./pages/admin/AdminPanel";
 import FixAccount from "./pages/FixAccount";
+import ProfileWizard from "./pages/ProfileWizard";
 import AboutPage from "./pages/AboutPage";
 import HelpPage from "./pages/HelpPage";
 import TermsPage from "./pages/TermsPage";
 import TipsParentsPage from "./pages/TipsParentsPage";
 import TipsBabysittersPage from "./pages/TipsBabysittersPage";
 import SpecialNeedsPage from "./pages/SpecialNeedsPage";
+import BabysittingJobs from "./pages/BabysittingJobs";
+import PostJob from "./pages/PostJob";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +65,25 @@ const App = () => (
             <Route path="/tips/parents" element={<TipsParentsPage />} />
             <Route path="/tips/babysitters" element={<TipsBabysittersPage />} />
             <Route path="/special-needs" element={<SpecialNeedsPage />} />
+            <Route path="/babysitting-jobs" element={<BabysittingJobs />} />
+            <Route
+              path="/post-job"
+              element={
+                <ProtectedRoute>
+                  <PostJob />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Profile Wizard */}
+            <Route
+              path="/profile-wizard"
+              element={
+                <ProtectedRoute>
+                  <ProfileWizard />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Onboarding */}
             <Route

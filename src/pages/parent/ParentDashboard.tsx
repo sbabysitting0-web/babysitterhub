@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, MessageCircle, Star, Calendar, Clock, User,
   CalendarCheck, ArrowRight, LogOut, Home, Bell,
-  Settings, MapPin, Shield, BookOpen,
+  Settings, MapPin, Shield, BookOpen, Briefcase,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -172,6 +172,7 @@ const ParentDashboard = () => {
         </div>
         <nav className="flex-1 px-3 space-y-0.5">
           <SidebarLink icon={Home} label="Dashboard" href="/parent/dashboard" active />
+          <SidebarLink icon={Briefcase} label="Babysitting Jobs" href="/babysitting-jobs" />
           <SidebarLink icon={MessageCircle} label="Messages" href="/parent/inbox" />
         </nav>
         <div className="px-3 pb-5">
@@ -282,7 +283,7 @@ const ParentDashboard = () => {
             {[
               { to: "/babysitters", icon: Search, label: "Find a Sitter", desc: "Search & compare verified babysitters", color: TEAL },
               { to: "/parent/inbox", icon: MessageCircle, label: "Messages", desc: "Chat directly with your sitters", color: "#60A5FA" },
-              { to: "/parent/inbox", icon: BookOpen, label: "My Bookings", desc: "View all your booking history", color: "#A78BFA" },
+              { to: "/post-job", icon: BookOpen, label: "Post a Job", desc: "Post a job and let sitters come to you", color: "#A78BFA" },
             ].map(({ to, icon: Icon, label, desc, color }) => (
               <Link key={label} to={to} className="group rounded-2xl p-4 flex items-center gap-4 transition-all hover:brightness-110" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform" style={{ background: `${color}18` }}>

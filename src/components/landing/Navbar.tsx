@@ -7,6 +7,7 @@ import { LogOut, LayoutDashboard, ChevronDown, Menu, X } from "lucide-react";
 const NAV_LINKS = [
   { label: "How it works", href: "/", hash: "how-it-works" },
   { label: "Find a Sitter", href: "/babysitters", hash: "" },
+  { label: "Babysitting Jobs", href: "/babysitting-jobs", hash: "" },
   { label: "Safety", href: "/", hash: "safety" },
 ];
 
