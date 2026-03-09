@@ -12,6 +12,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import newLogo from "@/assets/new logo.png";
+import { resolveCoords, TILE_URL, TILE_ATTR } from "@/utils/mapHelpers";
 
 const TEAL = "#3DBEB5";
 const BG = "#080F0D";
@@ -98,11 +99,19 @@ const ParentDashboard = () => {
         const { data: sitterData } = await supabase.from("babysitter_profiles")
           .select("id, user_id, name, city, hourly_rate, rating_avg, is_verified, location_lat, location_lng");
         if (sitterData) {
-          setSitterLocations(sitterData.filter((s) => s.location_lat !== null && s.location_lng !== null).map((s) => ({
-            id: s.id, user_id: s.user_id, name: s.name, city: s.city,
-            hourly_rate: s.hourly_rate, rating_avg: s.rating_avg, is_verified: s.is_verified,
-            lat: s.location_lat as number, lng: s.location_lng as number,
-          })));
+          const mapped: SitterLocation[] = [];
+          for (let i = 0; i < sitterData.length; i++) {
+            const s = sitterData[i];
+            const coords = resolveCoords(s.location_lat, s.location_lng, s.city, i);
+            if (coords) {
+              mapped.push({
+                id: s.id, user_id: s.user_id, name: s.name, city: s.city,
+                hourly_rate: s.hourly_rate, rating_avg: s.rating_avg,
+                is_verified: s.is_verified, lat: coords.lat, lng: coords.lng,
+              });
+            }
+          }
+          setSitterLocations(mapped);
         }
         if (bookingsRes.data) {
           const ids = [...new Set(bookingsRes.data.map((b) => b.babysitter_id))];
@@ -139,16 +148,71 @@ const ParentDashboard = () => {
     const source = activeSearch.trim()
       ? sitterLocations.filter((s) => s.city?.toLowerCase().includes(activeSearch.trim().toLowerCase()) || s.name?.toLowerCase().includes(activeSearch.trim().toLowerCase()))
       : sitterLocations;
-    const center: [number, number] = source.length > 0 ? [source[0].lat, source[0].lng] : [1.3521, 103.8198];
+    // Default center: first sitter if available, else Delhi (India)
+    const center: [number, number] = source.length > 0 ? [source[0].lat, source[0].lng] : [28.6139, 77.2090];
+    const zoom = source.length > 0 ? (source.length === 1 ? 13 : 5) : 5;
     if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
-    const map = L.map(mapDivRef.current, { center, zoom: source.length > 0 ? 12 : 11, scrollWheelZoom: false });
+    const map = L.map(mapDivRef.current, { center, zoom, scrollWheelZoom: true });
     mapInstanceRef.current = map;
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>' }).addTo(map);
-    const pinIcon = L.divIcon({ className: "", html: `<div style="width:28px;height:28px;background:${TEAL};border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>`, iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30] });
+
+    L.tileLayer(TILE_URL, {
+      attribution: TILE_ATTR,
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Named pin: teal circle + first-name label below
     source.forEach((s) => {
-      const html = `<div style="min-width:160px;font-family:sans-serif"><p style="font-weight:700;font-size:14px;margin:0 0 3px;color:#1c1917">${s.name}</p>${s.city ? `<p style="font-size:12px;color:#78716c;margin:0 0 6px">📍 ${s.city}</p>` : ""}<a href="/babysitters/${s.id}" style="display:block;background:${TEAL};color:#fff;text-align:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;text-decoration:none">View Profile</a></div>`;
-      L.marker([s.lat, s.lng], { icon: pinIcon }).addTo(map).bindPopup(html);
+      const firstName = s.name.split(" ")[0];
+      const verified = s.is_verified
+        ? `<span style="color:#16a34a;font-size:10px;font-weight:600">✓ Verified</span>`
+        : "";
+      const pinIcon = L.divIcon({
+        className: "",
+        html: `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="
+              width:34px;height:34px;
+              background:linear-gradient(135deg,${TEAL},#2a9d95);
+              border:3px solid rgba(255,255,255,0.9);
+              border-radius:50%;
+              box-shadow:0 2px 10px rgba(61,190,181,0.5);
+              display:flex;align-items:center;justify-content:center;
+            ">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span style="
+              background:rgba(14,30,26,0.92);
+              color:#3DBEB5;
+              font-size:10px;
+              font-weight:700;
+              padding:1px 6px;
+              border-radius:999px;
+              border:1px solid rgba(61,190,181,0.4);
+              white-space:nowrap;
+              max-width:80px;
+              overflow:hidden;
+              text-overflow:ellipsis;
+            ">${firstName}</span>
+          </div>`,
+        iconSize: [80, 54],
+        iconAnchor: [40, 34],
+        popupAnchor: [0, -36],
+      });
+
+      const popup = `
+        <div style="min-width:170px;font-family:system-ui,sans-serif;padding:2px 0">
+          <p style="font-weight:700;font-size:14px;margin:0 0 3px;color:#1c1917">${s.name}</p>
+          ${s.city ? `<p style="font-size:12px;color:#78716c;margin:0 0 4px">📍 ${s.city}</p>` : ""}
+          ${s.hourly_rate ? `<p style="font-size:13px;font-weight:700;color:${TEAL};margin:0 0 3px">₹${Number(s.hourly_rate).toFixed(0)}/hr</p>` : ""}
+          <div style="margin:0 0 6px">${verified}</div>
+          <a href="/babysitters/${s.id}" style="display:block;background:${TEAL};color:#fff;text-align:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600;text-decoration:none">View Profile →</a>
+        </div>`;
+      L.marker([s.lat, s.lng], { icon: pinIcon }).addTo(map).bindPopup(popup);
     });
+
     return () => { map.remove(); mapInstanceRef.current = null; };
   }, [sitterLocations, activeSearch]);
 

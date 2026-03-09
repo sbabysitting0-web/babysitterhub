@@ -6,15 +6,18 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import {
   Search, MapPin, Baby, Briefcase, ShieldCheck, SlidersHorizontal,
-  Clock, X, Crosshair,
+  Clock, X, Crosshair, Star, CheckCircle2,
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
+import { resolveCoords, TILE_URL, TILE_ATTR } from "@/utils/mapHelpers";
 
 /* ── Design tokens ───────────────────────────────────────────────────── */
 const TEAL = "#3DBEB5";
 const BG   = "#080F0D";
 const CARD = "#0E1E1A";
 const BDR  = "rgba(255,255,255,0.08)";
+const PINK = "#E91E8C";
+
 
 /* ── Filter options ──────────────────────────────────────────────────── */
 const TYPE_OPTIONS     = ["Regular","Occasional","Overnight","Emergency","After school","Full-time nanny"];
@@ -46,13 +49,28 @@ interface Babysitter {
   user_id: string;
   name: string;
   photo_url: string | null;
+  bio: string | null;
   city: string | null;
   location_lat: number | null;
   location_lng: number | null;
   hourly_rate: number | null;
+  max_kids: number | null;
   is_verified: boolean | null;
   rating_avg: number | null;
+  rating_count: number | null;
   years_experience: number | null;
+  languages: string[] | null;
+  skills: string[] | null;
+  updated_at: string;
+}
+
+/* ── Haversine distance (km) ─────────────────────────────────────────── */
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 /* ── Filter pill (top bar) ───────────────────────────────────────────── */
@@ -108,6 +126,8 @@ const BabysittingJobs = () => {
 
   /* babysitter state */
   const [babysitters, setBabysitters] = useState<Babysitter[]>([]);
+  /* babysitters visible in current map viewport */
+  const [visibleSitters, setVisibleSitters] = useState<Babysitter[]>([]);
 
   /* filter state */
   const [selTypes, setSelTypes]       = useState<string[]>([]);
@@ -122,7 +142,6 @@ const BabysittingJobs = () => {
   useEffect(() => {
     if (!user) return;
     const loadHome = async () => {
-      // Try babysitter profile first (has lat/lng)
       const { data: bp } = await supabase.from("babysitter_profiles")
         .select("city, location_lat, location_lng")
         .eq("user_id", user.id).maybeSingle();
@@ -131,13 +150,16 @@ const BabysittingJobs = () => {
         setHomeCity(bp.city ?? null);
         return;
       }
-      // Try parent profile
       const { data: pp } = await supabase.from("parent_profiles")
-        .select("city").eq("user_id", user.id).maybeSingle();
+        .select("city, location_lat, location_lng").eq("user_id", user.id).maybeSingle();
+      if (pp?.location_lat && pp?.location_lng) {
+        setHomeCoords([pp.location_lat, pp.location_lng]);
+        setHomeCity(pp.city ?? null);
+        return;
+      }
       const city = bp?.city || pp?.city;
       if (city) {
         setHomeCity(city);
-        // Geocode city name via Nominatim
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}&limit=1`);
           const results = await res.json();
@@ -174,16 +196,22 @@ const BabysittingJobs = () => {
   /* ── Load babysitters + real-time subscription ─────────────────── */
   useEffect(() => {
     const loadBabysitters = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("babysitter_profiles")
-        .select("id, user_id, name, photo_url, city, location_lat, location_lng, hourly_rate, is_verified, rating_avg, years_experience");
+        .select("id, user_id, name, photo_url, bio, city, location_lat, location_lng, hourly_rate, max_kids, is_verified, rating_avg, rating_count, years_experience, languages, skills, updated_at");
+      console.log("[BabysittingJobs] Fetched babysitters:", data?.length, "error:", error);
       if (data) {
-        setBabysitters(data.filter((b) => b.location_lat != null && b.location_lng != null));
+        const mapped = data.map((b, idx) => {
+          const coords = resolveCoords(b.location_lat, b.location_lng, b.city, idx);
+          if (coords) return { ...b, location_lat: coords.lat, location_lng: coords.lng };
+          return null;
+        }).filter(Boolean) as typeof data;
+        console.log("[BabysittingJobs] Babysitters with coords:", mapped.length);
+        setBabysitters(mapped);
       }
     };
     loadBabysitters();
 
-    /* Supabase Realtime — listen for INSERT / UPDATE / DELETE */
     const channel = supabase
       .channel("babysitter-locations")
       .on(
@@ -192,7 +220,6 @@ const BabysittingJobs = () => {
         (payload: any) => {
           const rec = payload.new as Babysitter | undefined;
           const oldRec = payload.old as { id?: string } | undefined;
-
           if (payload.eventType === "INSERT" && rec?.location_lat && rec?.location_lng) {
             setBabysitters((prev) => [...prev, rec]);
           } else if (payload.eventType === "UPDATE" && rec) {
@@ -210,6 +237,18 @@ const BabysittingJobs = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  /* ── Update visible sitters when map moves ──────────────────────── */
+  const updateVisibleSitters = useCallback(() => {
+    const map = mapInst.current;
+    if (!map) { setVisibleSitters(babysitters); return; }
+    const bounds = map.getBounds();
+    const inView = babysitters.filter((b) =>
+      b.location_lat != null && b.location_lng != null &&
+      bounds.contains([b.location_lat!, b.location_lng!])
+    );
+    setVisibleSitters(inView);
+  }, [babysitters]);
+
   /* ── Filtered jobs ──────────────────────────────────────────────── */
   const filtered = jobs.filter((j) => {
     if (search.trim()) {
@@ -224,35 +263,39 @@ const BabysittingJobs = () => {
     return true;
   });
 
+  /* ── Search-filtered visible sitters ────────────────────────────── */
+  const displayedSitters = visibleSitters.filter((b) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return b.name?.toLowerCase().includes(q) || b.city?.toLowerCase().includes(q) || b.bio?.toLowerCase().includes(q);
+  });
+
   /* ── Leaflet map ────────────────────────────────────────────────── */
   const setupMap = useCallback(() => {
     if (!mapRef.current) return;
     if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; }
 
     const withCoords = filtered.filter((j) => j.location_lat && j.location_lng);
-    // Prefer home location as center, then job coords, then Singapore default
     const center: [number, number] = homeCoords
       ? homeCoords
       : withCoords.length > 0
         ? [withCoords[0].location_lat!, withCoords[0].location_lng!]
-        : [1.3521, 103.8198];
+        : [28.6139, 77.2090]; // Delhi default
 
     const map = L.map(mapRef.current, {
-      center, zoom: homeCoords ? 13 : withCoords.length > 0 ? 13 : 12,
+      center, zoom: homeCoords ? 11 : withCoords.length > 0 ? 11 : 6,
       zoomControl: false,
     });
     mapInst.current = map;
 
-    /* Dark tiles matching reference (CARTO dark) */
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    L.tileLayer(TILE_URL, {
+      attribution: TILE_ATTR,
       maxZoom: 19,
     }).addTo(map);
 
-    /* Zoom control — top right like the reference */
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    /* ── Home icon marker (pink circle + white home SVG) ─────── */
+    /* Home marker */
     if (homeCoords) {
       const homeIcon = L.divIcon({
         className: "",
@@ -274,7 +317,7 @@ const BabysittingJobs = () => {
         </div>`);
     }
 
-    /* Pin markers for jobs */
+    /* Job pin markers (teal) */
     const pinIcon = L.divIcon({
       className: "",
       html: `<div style="
@@ -287,40 +330,39 @@ const BabysittingJobs = () => {
       "><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
       iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -18],
     });
-
     withCoords.forEach((j) => {
       const popup = `
         <div style="min-width:190px;font-family:system-ui,sans-serif;padding:2px 0">
           <p style="font-weight:700;font-size:13px;margin:0 0 3px;color:#1c1917">${j.title}</p>
           ${j.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${j.city}</p>` : ""}
-          ${j.hourly_rate ? `<p style="font-size:12px;font-weight:600;color:${TEAL};margin:0 0 4px">$${Number(j.hourly_rate).toFixed(0)}/hr</p>` : ""}
+          ${j.hourly_rate ? `<p style="font-size:12px;font-weight:600;color:${TEAL};margin:0 0 4px">₹${Number(j.hourly_rate).toFixed(0)}/hr</p>` : ""}
           <p style="font-size:11px;color:#a8a29e;margin:0">${j.parent_name} · ${j.children_count ?? 1} child${(j.children_count ?? 1) > 1 ? "ren" : ""}</p>
         </div>`;
       L.marker([j.location_lat!, j.location_lng!], { icon: pinIcon }).addTo(map).bindPopup(popup);
     });
 
-    /* ── Babysitter pin markers (pink/magenta — distinct from jobs) ── */
+    /* Babysitter pin markers (pink/magenta) */
     const sitterIcon = L.divIcon({
       className: "",
       html: `<div style="
-        width:32px;height:32px;
+        width:34px;height:34px;
         background:linear-gradient(135deg,#E91E8C,#C2185B);
         border:3px solid rgba(255,255,255,0.9);
         border-radius:50%;
         box-shadow:0 2px 12px rgba(233,30,140,0.45);
         display:flex;align-items:center;justify-content:center;
-      "><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M12 2a5 5 0 0 1 5 5c0 3.5-5 9-5 9S7 10.5 7 7a5 5 0 0 1 5-5z"/><circle cx="12" cy="7" r="2" fill="rgba(233,30,140,0.9)" stroke="rgba(233,30,140,0.9)"/></svg></div>`,
-      iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -20],
+      "><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
+      iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
     });
-
     babysitters.forEach((b) => {
       const stars = b.rating_avg ? `⭐ ${Number(b.rating_avg).toFixed(1)}` : "";
       const verified = b.is_verified ? `<span style="color:#16a34a;font-size:11px;font-weight:600">✓ Verified</span>` : "";
       const popup = `
-        <div style="min-width:180px;font-family:system-ui,sans-serif;padding:2px 0">
-          <p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1c1917">🧑‍🍼 ${b.name}</p>
+        <div style="min-width:200px;font-family:system-ui,sans-serif;padding:2px 0">
+          <p style="font-weight:700;font-size:14px;margin:0 0 3px;color:#1c1917">${b.name}</p>
           ${b.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${b.city}</p>` : ""}
-          ${b.hourly_rate ? `<p style="font-size:12px;font-weight:600;color:#E91E8C;margin:0 0 3px">$${Number(b.hourly_rate).toFixed(0)}/hr</p>` : ""}
+          ${b.bio ? `<p style="font-size:11px;color:#57534e;margin:0 0 4px;max-width:220px">${b.bio.length > 100 ? b.bio.slice(0, 100) + "…" : b.bio}</p>` : ""}
+          ${b.hourly_rate ? `<p style="font-size:13px;font-weight:700;color:#E91E8C;margin:0 0 3px">₹${Number(b.hourly_rate).toFixed(0)}/hr</p>` : ""}
           <div style="display:flex;align-items:center;gap:8px;margin:0 0 2px">
             ${stars ? `<span style="font-size:11px;color:#a8a29e">${stars}</span>` : ""}
             ${verified}
@@ -329,6 +371,21 @@ const BabysittingJobs = () => {
         </div>`;
       L.marker([b.location_lat!, b.location_lng!], { icon: sitterIcon }).addTo(map).bindPopup(popup);
     });
+
+    /* Listen for map move/zoom to update visible sitters in left panel */
+    const onMapMove = () => {
+      const bounds = map.getBounds();
+      const inView = babysitters.filter((b) =>
+        b.location_lat != null && b.location_lng != null &&
+        bounds.contains([b.location_lat!, b.location_lng!])
+      );
+      setVisibleSitters(inView);
+    };
+    map.on("moveend", onMapMove);
+    map.on("zoomend", onMapMove);
+    // Initial sync
+    setTimeout(onMapMove, 100);
+
   }, [filtered, babysitters, homeCoords, homeCity]);
 
   useEffect(() => {
@@ -339,6 +396,18 @@ const BabysittingJobs = () => {
   const toggle = (arr: string[], val: string, set: React.Dispatch<React.SetStateAction<string[]>>) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
 
+  /* ── Time-ago helper ───────────────────────────────────────────────── */
+  const timeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return days === 1 ? "yesterday" : `${days}d ago`;
+    return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  };
+
   /* ══════════════════════════════════════════════════════════════════ */
   /*                           RENDER                                  */
   /* ══════════════════════════════════════════════════════════════════ */
@@ -346,16 +415,15 @@ const BabysittingJobs = () => {
     <div className="min-h-screen flex flex-col" style={{ background: BG }}>
       <Navbar />
 
-      {/* ── Search + filter bar (below navbar) ────────────────────── */}
-      <div className="pt-[76px]"  /* leave room for fixed navbar */ >
-        {/* Search */}
+      {/* ── Search + filter bar ────────────────────────────────────── */}
+      <div className="pt-[76px]">
         <div style={{ background: CARD, borderBottom: `1px solid ${BDR}` }}>
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
             <div className="flex-1 relative">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.3)" }} />
               <input
                 type="text"
-                placeholder="Start your search"
+                placeholder="Search babysitters or jobs..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-white/5 border text-white placeholder-white/30 rounded-full pl-11 pr-4 py-2.5 text-sm outline-none focus:border-[#3DBEB5]/50 transition-all"
@@ -377,7 +445,6 @@ const BabysittingJobs = () => {
             </Link>
           </div>
 
-          {/* Filter pills row — matching the reference exactly */}
           <div className="max-w-7xl mx-auto px-4 pb-3 flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
             <FilterPill icon={Briefcase} label="Type of work" count={selTypes.length}
               open={openPanel === "type"} onClick={() => setOpenPanel(openPanel === "type" ? null : "type")} />
@@ -435,41 +502,46 @@ const BabysittingJobs = () => {
           </h1>
           <p className="text-sm mt-1.5 mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>
             {loading
-              ? "Loading babysitting jobs..."
-              : filtered.length > 0
-                ? `There ${filtered.length === 1 ? "is" : "are"} currently ${filtered.length} babysitting job${filtered.length !== 1 ? "s" : ""} matching these search criteria.`
-                : "There are currently no babysitting jobs matching these search criteria."}
+              ? "Loading..."
+              : `${displayedSitters.length} babysitter${displayedSitters.length !== 1 ? "s" : ""} available in this area. Find the perfect babysitter here!`}
           </p>
-          {babysitters.length > 0 && (
-            <p className="text-xs font-medium mb-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-              style={{ background: "rgba(233,30,140,0.10)", color: "#E91E8C", border: "1px solid rgba(233,30,140,0.2)" }}>
-              🧑‍🍼 {babysitters.length} babysitter{babysitters.length !== 1 ? "s" : ""} nearby
-            </p>
+
+          {/* Babysitter count badge */}
+          {displayedSitters.length > 0 && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs font-medium inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                style={{ background: "rgba(233,30,140,0.10)", color: PINK, border: "1px solid rgba(233,30,140,0.2)" }}>
+                🧑‍🍼 {displayedSitters.length} babysitter{displayedSitters.length !== 1 ? "s" : ""} in view
+              </span>
+              {filtered.length > 0 && (
+                <span className="text-xs font-medium inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+                  style={{ background: "rgba(61,190,181,0.10)", color: TEAL, border: `1px solid rgba(61,190,181,0.2)` }}>
+                  📋 {filtered.length} job{filtered.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
           )}
 
-          {/* content hint when map is empty */}
-          {!loading && filtered.length === 0 && (
-            <p className="text-sm font-semibold text-white/60 text-center mb-5">
-              Zoom out on the map to find more profiles.
-            </p>
-          )}
-
+          {/* ── Babysitter cards (like reference image) ──────────── */}
           <div className="flex-1 space-y-3">
             {loading ? (
               [1, 2, 3].map((i) => (
                 <div key={i} className="rounded-2xl p-5" style={{ background: CARD, border: `1px solid ${BDR}` }}>
-                  <div className="space-y-3">
-                    <div className="h-5 w-3/4 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.06)" }} />
-                    <div className="h-4 w-1/2 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+                  <div className="flex gap-4">
+                    <div className="w-20 h-20 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.06)" }} />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-5 w-3/4 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.06)" }} />
+                      <div className="h-4 w-1/2 rounded animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+                      <div className="h-3 w-full rounded animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+                    </div>
                   </div>
                 </div>
               ))
-            ) : filtered.length === 0 ? (
-              /* ── Empty state card (matching reference) ────────── */
+            ) : displayedSitters.length === 0 ? (
               <div className="rounded-2xl p-7 text-center" style={{ background: "rgba(61,190,181,0.06)", border: "1px solid rgba(61,190,181,0.15)" }}>
-                <h3 className="text-base font-bold text-white mb-1.5">No babysitting jobs in your neighborhood?</h3>
+                <h3 className="text-base font-bold text-white mb-1.5">No babysitters in this area?</h3>
                 <p className="text-sm mb-5" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Add your profile today and we'll work hard to connect families with babysitters like you.
+                  Zoom out on the map to find babysitters in a wider area, or add your profile today.
                 </p>
                 <Link to="/profile-wizard"
                   className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold text-white hover:opacity-90 transition-all"
@@ -478,53 +550,116 @@ const BabysittingJobs = () => {
                 </Link>
               </div>
             ) : (
-              /* ── Job cards ───────────────────────────────────── */
-              filtered.map((job) => (
-                <div key={job.id} className="rounded-2xl p-5 hover:brightness-110 transition-all cursor-pointer group"
-                  style={{ background: CARD, border: `1px solid ${BDR}` }}>
-                  <h3 className="text-sm font-bold text-white group-hover:text-[#3DBEB5] transition-colors truncate">{job.title}</h3>
-                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    {job.city && (
-                      <span className="inline-flex items-center gap-1 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
-                        <MapPin size={11} /> {job.city}
-                      </span>
-                    )}
-                    {job.hourly_rate != null && (
-                      <span className="text-xs font-bold" style={{ color: TEAL }}>${Number(job.hourly_rate).toFixed(0)}/hr</span>
-                    )}
-                    {job.job_type && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(61,190,181,0.1)", color: TEAL }}>
-                        {job.job_type}
-                      </span>
-                    )}
-                  </div>
-                  {job.description && (
-                    <p className="text-xs mt-2 line-clamp-2" style={{ color: "rgba(255,255,255,0.35)" }}>{job.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ background: TEAL }}>
-                        {job.parent_name?.charAt(0).toUpperCase() ?? "P"}
+              /* ── Babysitter info cards ───────────────────────── */
+              displayedSitters.map((sitter) => {
+                const dist = homeCoords
+                  ? distanceKm(homeCoords[0], homeCoords[1], sitter.location_lat!, sitter.location_lng!)
+                  : null;
+                return (
+                  <div key={sitter.id}
+                    className="rounded-2xl p-4 hover:brightness-110 transition-all cursor-pointer group relative"
+                    style={{ background: CARD, border: `1px solid ${BDR}` }}
+                    onClick={() => {
+                      if (mapInst.current && sitter.location_lat && sitter.location_lng) {
+                        mapInst.current.flyTo([sitter.location_lat, sitter.location_lng], 14, { duration: 0.8 });
+                      }
+                    }}
+                  >
+                    <div className="flex gap-4">
+                      {/* Avatar / Photo */}
+                      <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
+                        {sitter.photo_url ? (
+                          <img src={sitter.photo_url} alt={sitter.name}
+                            className="w-[72px] h-[72px] rounded-xl object-cover border-2"
+                            style={{ borderColor: "rgba(255,255,255,0.1)" }} />
+                        ) : (
+                          <div className="w-[72px] h-[72px] rounded-xl flex items-center justify-center text-xl font-bold text-white"
+                            style={{ background: `linear-gradient(135deg, ${PINK}, #C2185B)` }}>
+                            {sitter.name?.charAt(0).toUpperCase() ?? "B"}
+                          </div>
+                        )}
+                        {dist != null && (
+                          <span className="text-[10px] font-medium whitespace-nowrap" style={{ color: TEAL }}>
+                            ~ {dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(1)} km`}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>{job.parent_name}</span>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-white group-hover:text-[#E91E8C] transition-colors truncate">
+                            {sitter.name}
+                          </h3>
+                          {sitter.is_verified && (
+                            <CheckCircle2 size={14} style={{ color: "#16a34a", flexShrink: 0 }} />
+                          )}
+                          {/* Favorite heart placeholder */}
+                          <div className="ml-auto flex items-center gap-1 flex-shrink-0">
+                            <span style={{ color: PINK }} className="text-sm">♥</span>
+                            {sitter.rating_count != null && sitter.rating_count > 0 && (
+                              <span className="text-[10px] font-bold" style={{ color: PINK }}>{sitter.rating_count}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* City */}
+                        {sitter.city && (
+                          <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+                            Babysitter in {sitter.city}
+                          </p>
+                        )}
+
+                        {/* Bio */}
+                        {sitter.bio && (
+                          <p className="text-xs mt-1 line-clamp-2" style={{ color: "rgba(255,255,255,0.35)" }}>
+                            {sitter.bio}
+                          </p>
+                        )}
+
+                        {/* Detail chips */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                          {sitter.max_kids && (
+                            <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: TEAL }}>
+                              <Baby size={11} /> Max {sitter.max_kids} children
+                            </span>
+                          )}
+                          {sitter.years_experience != null && sitter.years_experience > 0 && (
+                            <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.35)" }}>
+                              ⚡ {sitter.years_experience} yr{sitter.years_experience > 1 ? "s" : ""} exp
+                            </span>
+                          )}
+                          {sitter.rating_avg != null && sitter.rating_avg > 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-[11px]" style={{ color: "#fbbf24" }}>
+                              <Star size={10} fill="#fbbf24" /> {Number(sitter.rating_avg).toFixed(1)}
+                            </span>
+                          )}
+                          <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                            <Clock size={10} className="inline mr-0.5" />
+                            Last active: {timeAgo(sitter.updated_at)}
+                          </span>
+                        </div>
+
+                        {/* Rate */}
+                        {sitter.hourly_rate != null && (
+                          <p className="text-xs font-bold mt-2 text-right" style={{ color: PINK }}>
+                            INR {Number(sitter.hourly_rate).toFixed(2)}/hr
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                      <Clock size={10} className="inline mr-0.5" />
-                      {new Date(job.created_at).toLocaleDateString("en-SG", { day: "numeric", month: "short" })}
-                    </span>
-                    {job.children_count != null && (
-                      <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)" }}>
-                        <Baby size={10} className="inline mr-0.5" />
-                        {job.children_count} child{job.children_count > 1 ? "ren" : ""}
-                      </span>
-                    )}
+
+                    {/* Right arrow */}
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30 group-hover:opacity-70 transition-opacity">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
-          {/* Breadcrumb (bottom, matching reference) */}
+          {/* Breadcrumb */}
           <div className="mt-5 pt-3" style={{ borderTop: `1px solid ${BDR}` }}>
             <div className="flex items-center gap-1.5 text-xs">
               <Link to="/" className="font-medium underline" style={{ color: "rgba(255,255,255,0.45)" }}>Babysits</Link>
@@ -537,7 +672,6 @@ const BabysittingJobs = () => {
         {/* ── Right panel: map ────────────────────────────────────── */}
         <div className="w-full lg:w-[58%] xl:w-[62%] flex-shrink-0 relative">
           <div ref={mapRef} className="w-full" style={{ height: "calc(100vh - 160px)", minHeight: 400 }} />
-          {/* Locate-me button (⊙) — below zoom controls, matching reference */}
           {homeCoords && (
             <button
               onClick={() => { if (mapInst.current && homeCoords) mapInst.current.flyTo(homeCoords, 14, { duration: 0.8 }); }}
