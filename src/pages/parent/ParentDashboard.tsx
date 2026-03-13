@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import newLogo from "@/assets/new logo.png";
+
 import { resolveCoords, TILE_URL, TILE_ATTR } from "@/utils/mapHelpers";
 
 const TEAL = "#3DBEB5";
@@ -230,8 +230,8 @@ const ParentDashboard = () => {
       <aside className="hidden lg:flex flex-col w-[252px] fixed inset-y-0 left-0 z-40" style={{ background: CARD, borderRight: `1px solid ${BORDER}` }}>
         <div className="px-6 pt-6 pb-7">
           <Link to="/" className="flex items-center gap-2.5">
-            <img src={newLogo} alt="Logo" className="h-7 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="text-base font-heading font-bold text-white">BabySitter<span style={{ color: TEAL }}>Hub</span></span>
+
+            <span className="text-base font-heading font-bold text-white">Baby<span style={{ color: TEAL }}>Care</span></span>
           </Link>
         </div>
         <nav className="flex-1 px-3 space-y-0.5">
@@ -252,8 +252,8 @@ const ParentDashboard = () => {
         <header className="lg:hidden sticky top-0 z-30" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
           <div className="flex items-center justify-between px-4 py-3">
             <Link to="/" className="flex items-center gap-2">
-              <img src={newLogo} alt="Logo" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-              <span className="font-heading font-bold text-white text-sm">BabySitter<span style={{ color: TEAL }}>Hub</span></span>
+
+              <span className="font-heading font-bold text-white text-sm">Baby<span style={{ color: TEAL }}>Care</span></span>
             </Link>
             <div className="flex items-center gap-1.5">
               <button className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.4)" }}><Bell size={16} /></button>

@@ -1,5 +1,6 @@
 import { Star, MapPin, Shield, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const sitters = [
   {
@@ -143,6 +144,7 @@ const SitterCard = ({ sitter }: { sitter: (typeof sitters)[0] }) => (
 );
 
 const BabysittersSection = () => {
+  const { user } = useAuth();
   return (
     <section className="py-20" style={{ background: "#080F0D" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -212,7 +214,7 @@ const BabysittersSection = () => {
             </p>
           </div>
           <Link
-            to="/signup"
+            to={user ? "/babysitting-jobs" : "/signup"}
             className="flex-shrink-0 inline-flex items-center gap-2 bg-teal text-white font-semibold px-7 py-3.5 rounded-full hover:bg-teal/90 transition-all hover:shadow-lg hover:shadow-teal/30 hover:-translate-y-0.5 whitespace-nowrap"
           >
             View babysitting jobs <ArrowRight size={16} />

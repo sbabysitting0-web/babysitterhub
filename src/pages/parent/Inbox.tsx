@@ -3,7 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Send, User, MessageCircle } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
+
 
 const TEAL  = "#3DBEB5";
 const BG    = "#080F0D";
@@ -94,8 +94,8 @@ const Inbox = () => {
       <header className="sticky top-0 z-30" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
         <div className="max-w-5xl mx-auto px-4 flex items-center gap-3 h-14">
           <Link to="/" className="flex items-center gap-2">
-            <img src={newLogo} alt="Logo" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="font-heading font-bold text-white text-sm">BabySitter<span style={{ color: TEAL }}>Hub</span></span>
+
+            <span className="font-heading font-bold text-white text-sm">Baby<span style={{ color: TEAL }}>Care</span></span>
           </Link>
           <span className="text-white/20 mx-1">/</span>
           <h1 className="text-sm font-semibold text-white/60">Messages</h1>

@@ -7,10 +7,11 @@ import L from "leaflet";
 import {
   Search, Star, SlidersHorizontal, X, MapPin, Clock,
   DollarSign, Shield, ArrowLeft, Users, ChevronRight, Crosshair,
-  CheckCircle2, Baby,
+  CheckCircle2, Baby, ArrowRight
 } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
+
 import { resolveCoords, TILE_URL, TILE_ATTR } from "@/utils/mapHelpers";
+import MapLoadingSpinner from "@/components/MapLoadingSpinner";
 
 const TEAL   = "#3DBEB5";
 const BG     = "#080F0D";
@@ -48,9 +49,13 @@ const SearchSitters = () => {
 
   const mapRef  = useRef<HTMLDivElement>(null);
   const mapInst = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.LayerGroup | null>(null);
+  const homeMarkerRef = useRef<L.Marker | null>(null);
+  const mapInitialized = useRef(false);
 
   const [sitters, setSitters]       = useState<Sitter[]>([]);
   const [loading, setLoading]       = useState(true);
+  const [loadingMap, setLoadingMap] = useState(true);
   const [search, setSearch]         = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters]       = useState({ city: searchParams.get("city") || "", maxRate: "", minExperience: "", language: "" });
@@ -158,62 +163,131 @@ const SearchSitters = () => {
     return s.name.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q) || s.bio?.toLowerCase().includes(q) || s.skills?.some((sk) => sk.toLowerCase().includes(q));
   });
 
-  /* ── Map setup ──────────────────────────────────────────────────── */
-  const setupMap = useCallback(() => {
-    if (!mapRef.current) return;
-    if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; }
+  /* ── Stable ref so map event handlers never need to be re-registered ── */
+  const syncRef = useRef<() => void>(() => {});
 
-    const withCoords = filtered.filter((s) => s.location_lat != null && s.location_lng != null);
-    const center: [number, number] = homeCoords
-      ? homeCoords
-      : withCoords.length > 0
-        ? [withCoords[0].location_lat!, withCoords[0].location_lng!]
-        : [28.6139, 77.2090];
+  /* ── Helper: sync visible sitters from current map bounds ──────── */
+  const syncVisibleSitters = useCallback(() => {
+    const map = mapInst.current;
+    if (!map) return;
+    const bounds = map.getBounds();
+    const inView = sitters.filter((s) => {
+      const q = search.toLowerCase();
+      const matchesSearch = !q || s.name.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q) || s.bio?.toLowerCase().includes(q) || s.skills?.some((sk) => sk.toLowerCase().includes(q));
+      return matchesSearch && s.location_lat != null && s.location_lng != null &&
+        bounds.contains([s.location_lat!, s.location_lng!]);
+    });
+    setVisibleSitters(inView);
+  }, [sitters, search]);
+
+  // Keep the ref pointing at the latest version – no effect re-runs, no map event rebinding
+  useEffect(() => { syncRef.current = syncVisibleSitters; }, [syncVisibleSitters]);
+
+  /* ── Also sync the list whenever sitters or search changes ─────── */
+  useEffect(() => { syncVisibleSitters(); }, [syncVisibleSitters]);
+
+  /* ── Map init (runs ONCE) ──────────────────────────────────────── */
+  useEffect(() => {
+    if (!mapRef.current || mapInitialized.current) return;
 
     const map = L.map(mapRef.current, {
-      center, zoom: homeCoords ? 11 : withCoords.length > 0 ? 6 : 5,
+      center: [28.6139, 77.2090],
+      zoom: 5,
       zoomControl: false,
+      zoomSnap: 0.1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 60,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
     });
     mapInst.current = map;
+    mapInitialized.current = true;
 
-    L.tileLayer(TILE_URL, {
+    const tileLayer = L.tileLayer(TILE_URL, {
       attribution: TILE_ATTR,
       maxZoom: 19,
     }).addTo(map);
 
+    tileLayer.on("loading", () => setLoadingMap(true));
+    tileLayer.on("load", () => setLoadingMap(false));
+
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    /* Home marker */
-    if (homeCoords) {
-      const homeIcon = L.divIcon({
-        className: "",
-        html: `<div style="
-          width:40px;height:40px;
-          background:rgba(244,180,192,0.85);
-          border:3px solid rgba(255,255,255,0.9);
-          border-radius:50%;
-          box-shadow:0 2px 12px rgba(0,0,0,0.35);
-          display:flex;align-items:center;justify-content:center;
-        "><svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22" fill="rgba(244,180,192,0.85)" stroke="rgba(244,180,192,0.85)"/></svg></div>`,
-        iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -24],
-      });
-      L.marker(homeCoords, { icon: homeIcon, zIndexOffset: 1000 })
-        .addTo(map)
-        .bindPopup(`<div style="font-family:system-ui,sans-serif;text-align:center;padding:2px 0">
-          <p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1c1917">📍 Your location</p>
-          ${homeCity ? `<p style="font-size:11px;color:#78716c;margin:0">${homeCity}</p>` : ""}
-        </div>`);
+    // Create a layer group for sitter markers
+    const markerGroup = L.layerGroup().addTo(map);
+    markersRef.current = markerGroup;
+
+    // Stable handler – always calls the latest syncVisibleSitters via ref
+    const stableHandler = () => syncRef.current();
+    map.on("moveend", stableHandler);
+    map.on("zoomend", stableHandler);
+
+    return () => {
+      map.remove();
+      mapInst.current = null;
+      mapInitialized.current = false;
+      markersRef.current = null;
+    };
+  }, []);
+
+  /* ── Home marker (updates when homeCoords change) ───────────────── */
+  useEffect(() => {
+    const map = mapInst.current;
+    if (!map) return;
+
+    // Remove old home marker
+    if (homeMarkerRef.current) {
+      map.removeLayer(homeMarkerRef.current);
+      homeMarkerRef.current = null;
     }
 
-    /* Babysitter pins (teal — matching the app's theme for parents) */
+    if (!homeCoords) return;
+
+    const homeIcon = L.divIcon({
+      className: "",
+      html: `<div style="
+        width:40px;height:40px;
+        background:rgba(244,180,192,0.85);
+        border:3px solid rgba(255,255,255,0.9);
+        border-radius:50%;
+        box-shadow:0 2px 12px rgba(0,0,0,0.35);
+        display:flex;align-items:center;justify-content:center;
+      "><svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22" fill="rgba(244,180,192,0.85)" stroke="rgba(244,180,192,0.85)"/></svg></div>`,
+      iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -24],
+    });
+
+    const marker = L.marker(homeCoords, { icon: homeIcon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup(`<div style="font-family:system-ui,sans-serif;text-align:center;padding:2px 0">
+        <p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1c1917">📍 Your location</p>
+        ${homeCity ? `<p style="font-size:11px;color:#78716c;margin:0">${homeCity}</p>` : ""}
+      </div>`);
+    homeMarkerRef.current = marker;
+
+    // Pan to home on first load
+    map.setView(homeCoords, 11, { animate: false });
+  }, [homeCoords, homeCity]);
+
+  /* ── Update sitter markers (without destroying the map) ─────────── */
+  useEffect(() => {
+    const map = mapInst.current;
+    const markerGroup = markersRef.current;
+    if (!map || !markerGroup) return;
+
+    // Clear old sitter markers
+    markerGroup.clearLayers();
+
+    const withCoords = filtered.filter((s) => s.location_lat != null && s.location_lng != null);
+
     const sitterIcon = L.divIcon({
       className: "",
       html: `<div style="
         width:34px;height:34px;
-        background:linear-gradient(135deg,${TEAL},#2a9d95);
+        background:linear-gradient(135deg,${PINK},#C2185B);
         border:3px solid rgba(255,255,255,0.9);
         border-radius:50%;
-        box-shadow:0 2px 12px rgba(61,190,181,0.45);
+        box-shadow:0 2px 12px rgba(233,30,140,0.45);
         display:flex;align-items:center;justify-content:center;
       "><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
       iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
@@ -227,35 +301,26 @@ const SearchSitters = () => {
           <p style="font-weight:700;font-size:14px;margin:0 0 3px;color:#1c1917">${s.name}</p>
           ${s.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${s.city}</p>` : ""}
           ${s.bio ? `<p style="font-size:11px;color:#57534e;margin:0 0 4px;max-width:220px">${s.bio.length > 80 ? s.bio.slice(0, 80) + "…" : s.bio}</p>` : ""}
-          ${s.hourly_rate ? `<p style="font-size:13px;font-weight:700;color:${TEAL};margin:0 0 3px">₹${Number(s.hourly_rate).toFixed(0)}/hr</p>` : ""}
+          ${s.hourly_rate ? `<p style="font-size:13px;font-weight:700;color:${PINK};margin:0 0 3px">₹${Number(s.hourly_rate).toFixed(0)}/hr</p>` : ""}
           <div style="display:flex;align-items:center;gap:8px;margin:0 0 2px">
             ${stars ? `<span style="font-size:11px;color:#a8a29e">${stars}</span>` : ""}
             ${verified}
           </div>
           ${s.years_experience ? `<p style="font-size:10px;color:#a8a29e;margin:0">${s.years_experience} yr${s.years_experience > 1 ? "s" : ""} experience</p>` : ""}
         </div>`;
-      L.marker([s.location_lat!, s.location_lng!], { icon: sitterIcon }).addTo(map).bindPopup(popup);
+      L.marker([s.location_lat!, s.location_lng!], { icon: sitterIcon }).bindPopup(popup).addTo(markerGroup);
     });
 
-    /* Map move → update visible sitters in left panel */
-    const onMapMove = () => {
-      const bounds = map.getBounds();
-      const inView = filtered.filter((s) =>
-        s.location_lat != null && s.location_lng != null &&
-        bounds.contains([s.location_lat!, s.location_lng!])
-      );
-      setVisibleSitters(inView);
-    };
-    map.on("moveend", onMapMove);
-    map.on("zoomend", onMapMove);
-    setTimeout(onMapMove, 100);
+    // Fit map to show all markers if no home coords and this is the first data load
+    if (!homeCoords && withCoords.length > 0) {
+      const bounds = L.latLngBounds(withCoords.map((s) => [s.location_lat!, s.location_lng!] as [number, number]));
+      // Add some padding so pins aren't at the edge
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13, animate: false });
+    }
 
-  }, [filtered, homeCoords, homeCity]);
-
-  useEffect(() => {
-    const t = setTimeout(setupMap, 80);
-    return () => { clearTimeout(t); if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; } };
-  }, [setupMap]);
+    // Sync visible sitters
+    setTimeout(() => syncVisibleSitters(), 50);
+  }, [filtered, homeCoords]);
 
   const clearFilters = () => setFilters({ city: "", maxRate: "", minExperience: "", language: "" });
   const hasActiveFilters = Object.values(filters).some(Boolean);
@@ -285,13 +350,15 @@ const SearchSitters = () => {
               <ArrowLeft size={15} />
             </button>
             <Link to="/" className="flex items-center gap-2">
-              <img src={newLogo} alt="Logo" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-              <span className="font-heading font-bold text-white text-sm hidden sm:block">BabySitter<span style={{ color: TEAL }}>Hub</span></span>
+
+              <span className="font-heading font-bold text-white text-sm hidden sm:block">Baby<span style={{ color: TEAL }}>Care</span></span>
             </Link>
           </div>
           {user ? (
-            <Link to={role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard"} className="text-xs font-medium flex items-center gap-1 transition-colors" style={{ color: TEAL }}>
-              Dashboard <ChevronRight size={13} />
+            <Link to={role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard"} 
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold hover:opacity-90 transition-all whitespace-nowrap"
+              style={{ background: TEAL, color: "#fff" }}>
+              Go to Dashboard <ArrowRight size={14} className="ml-0.5" />
             </Link>
           ) : (
             <div className="flex items-center gap-3">
@@ -303,7 +370,7 @@ const SearchSitters = () => {
       </header>
 
       {/* Search bar + filters */}
-      <div style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
+      <div className="sticky top-14 z-20" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <h1 className="text-xl sm:text-2xl font-heading font-bold text-white mb-1">Find a Babysitter</h1>
           <p className="text-sm mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
@@ -360,7 +427,7 @@ const SearchSitters = () => {
       <div className="flex-1 flex flex-col lg:flex-row" style={{ minHeight: 0 }}>
 
         {/* ── Left panel: sitter cards ────────────────────────────── */}
-        <div className="w-full lg:w-[42%] xl:w-[38%] flex flex-col overflow-y-auto px-4 lg:pl-6 lg:pr-4 py-4"
+        <div className="w-full lg:w-[42%] xl:w-[38%] flex flex-col overflow-y-auto px-4 lg:pl-6 lg:pr-4 py-4 relative z-10"
           style={{ maxHeight: "calc(100vh - 200px)", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent" }}>
 
           {/* Badges */}
@@ -510,22 +577,26 @@ const SearchSitters = () => {
         </div>
 
         {/* ── Right panel: map ────────────────────────────────────── */}
-        <div className="w-full lg:w-[58%] xl:w-[62%] flex-shrink-0 relative">
-          <div ref={mapRef} className="w-full" style={{ height: "calc(100vh - 200px)", minHeight: 400 }} />
-          {homeCoords && (
-            <button
-              onClick={() => { if (mapInst.current && homeCoords) mapInst.current.flyTo(homeCoords, 14, { duration: 0.8 }); }}
-              className="absolute z-[1000] flex items-center justify-center"
-              style={{
-                top: 120, right: 10,
-                width: 36, height: 36, borderRadius: 4,
-                background: "#fff", border: "2px solid rgba(0,0,0,0.15)",
-                boxShadow: "0 1px 5px rgba(0,0,0,0.3)", cursor: "pointer",
-              }}
-              title="Go to my location">
-              <Crosshair size={17} style={{ color: "#333" }} />
-            </button>
-          )}
+        <div className="w-full lg:w-[58%] xl:w-[62%] flex-shrink-0 p-4 lg:p-6 lg:pl-0">
+          <div className="w-full relative z-0 rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: 'rgba(255,255,255,0.08)', height: "calc(100vh - 232px)", minHeight: 400 }}>
+            {loadingMap && <MapLoadingSpinner />}
+            <div ref={mapRef} className="absolute inset-0" />
+            {homeCoords && (
+              <button
+                onClick={() => { if (mapInst.current && homeCoords) mapInst.current.flyTo(homeCoords, 14, { duration: 0.8 }); }}
+                className="absolute z-[1000] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                style={{
+                  top: 90, right: 16,
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
+                  backdropFilter: "blur(8px)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)", cursor: "pointer",
+                }}
+                title="Go to my location">
+                <Crosshair size={18} style={{ color: "white" }} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

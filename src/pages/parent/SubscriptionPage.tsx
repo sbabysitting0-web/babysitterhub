@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Crown, Check, Star } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
+
 
 const TEAL   = "#3DBEB5";
 const BG     = "#080F0D";
@@ -58,8 +58,8 @@ const SubscriptionPage = () => {
       <header className="sticky top-0 z-30" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
         <div className="max-w-4xl mx-auto px-4 flex items-center h-14">
           <Link to="/" className="flex items-center gap-2">
-            <img src={newLogo} alt="Logo" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="font-heading font-bold text-white text-sm">BabySitter<span style={{ color: TEAL }}>Hub</span></span>
+
+            <span className="font-heading font-bold text-white text-sm">Baby<span style={{ color: TEAL }}>Care</span></span>
           </Link>
         </div>
       </header>
@@ -71,7 +71,7 @@ const SubscriptionPage = () => {
             <Crown className="w-7 h-7" style={{ color: TEAL }} />
           </div>
           <h1 className="text-3xl font-heading font-bold text-white mb-3">Choose your plan</h1>
-          <p style={{ color: "rgba(255,255,255,0.45)" }}>Babysitters always use BabySitter for free. Parents choose their plan.</p>
+          <p style={{ color: "rgba(255,255,255,0.45)" }}>Babysitters always use BabyCare for free. Parents choose their plan.</p>
         </div>
 
         {/* Current subscription banner */}

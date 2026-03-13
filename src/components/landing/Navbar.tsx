@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, LayoutDashboard, ChevronDown, Menu, X } from "lucide-react";
+import { LogOut, LayoutDashboard, ChevronDown, Menu, X, ArrowRight } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "How it works", href: "/", hash: "how-it-works" },
@@ -73,7 +73,7 @@ const Navbar = () => {
         if (key && key.startsWith("sb-")) localStorage.removeItem(key);
       }
     }
-    window.location.href = "/";
+    window.location.href = "/login";
   };
 
   const dashboardPath = role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard";
@@ -134,8 +134,18 @@ const Navbar = () => {
         {/* Right side */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {user ? (
-            /* Avatar dropdown — desktop */
-            <div className="relative hidden md:block" ref={dropRef}>
+            <>
+              {/* Go to Dashboard — desktop */}
+              <Link
+                to={dashboardPath}
+                className="hidden md:inline-flex items-center gap-1.5 px-5 py-1.5 rounded-full text-sm font-semibold hover:-translate-y-px transition-all whitespace-nowrap"
+                style={{ background: TEAL, color: "#fff" }}
+              >
+                Go to Dashboard <ArrowRight size={15} className="ml-0.5" />
+              </Link>
+              
+              {/* Avatar dropdown — desktop */}
+              <div className="relative hidden md:block" ref={dropRef}>
               <button
                 onClick={() => setDropOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-full transition-all hover:opacity-90 focus:outline-none select-none"
@@ -188,18 +198,7 @@ const Navbar = () => {
                     </div>
                   </div>
                   <div className="p-2">
-                    <Link
-                      to={dashboardPath}
-                      onClick={() => setDropOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                      style={{ color: "rgba(255,255,255,0.7)" }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(61,190,181,0.08)")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <LayoutDashboard size={15} style={{ color: TEAL }} />
-                      Dashboard
-                    </Link>
-                    <div className="my-1.5 mx-1" style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
+
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
@@ -214,6 +213,7 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+            </>
           ) : (
             /* Sign up — desktop only */
             <Link
@@ -286,15 +286,7 @@ const Navbar = () => {
           <div className="px-3 pb-3 flex flex-col gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             {user ? (
               <>
-                <Link
-                  to={dashboardPath}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-2 mt-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                  style={{ background: `rgba(61,190,181,0.15)`, color: TEAL }}
-                >
-                  <LayoutDashboard size={15} />
-                  Go to Dashboard
-                </Link>
+
                 <button
                   onClick={handleLogout}
                   className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all"

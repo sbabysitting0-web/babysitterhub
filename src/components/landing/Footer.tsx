@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Heart, Mail, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { useState } from "react";
-import newLogo from "@/assets/new logo.png";
+
 
 const platformLinks = [
   { label: "How it works", href: "/#how-it-works", anchor: true },
@@ -48,12 +48,6 @@ const Footer = () => {
           {/* Brand col */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5 mb-5">
-              <img
-                src={newLogo}
-                alt="BabyCare"
-                className="h-7 w-auto"
-                style={{ filter: "brightness(0) invert(1)" }}
-              />
               <span className="text-base font-heading font-bold text-white">
                 Baby<span className="text-teal">Care</span>
               </span>

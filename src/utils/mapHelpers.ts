@@ -77,8 +77,7 @@ export function resolveCoords(
 }
 
 /**
- * Reliable tile layer URL (OSM standard — works everywhere).
- * The dark CARTO tiles sometimes fail to load.
+ * CartoDB Dark Matter tiles (sleek dark mode to match UI)
  */
-export const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-export const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+export const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+export const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';

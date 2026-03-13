@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, MapPin, Baby, DollarSign, Briefcase, CheckCircle } from "lucide-react";
-import newLogo from "@/assets/new logo.png";
+
 
 const TEAL = "#3DBEB5";
 const BG = "#080F0D";
@@ -136,7 +136,7 @@ const PostJob = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <Link to="/" className="inline-flex items-center gap-2.5 justify-center mb-4">
-            <img src={newLogo} alt="BabyCare" className="h-7 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
+
             <span className="text-lg font-bold text-white">Baby<span style={{ color: TEAL }}>Care</span></span>
           </Link>
           <h1 className="text-2xl font-bold text-white">Post a babysitting job</h1>

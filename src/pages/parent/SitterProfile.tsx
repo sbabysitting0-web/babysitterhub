@@ -7,7 +7,7 @@ import {
   Shield, ChevronLeft, Calendar, MessageCircle,
 } from "lucide-react";
 import { getCurrencyForCity } from "@/lib/utils";
-import newLogo from "@/assets/new logo.png";
+
 
 const TEAL   = "#3DBEB5";
 const BG     = "#080F0D";
@@ -40,8 +40,8 @@ const SitterProfilePage = () => {
   useEffect(() => {
     const load = async () => {
       if (!id) return;
-      const timeout = <T,>(p: Promise<T>): Promise<T> =>
-        Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000))]);
+      const timeout = <T,>(p: PromiseLike<T>): Promise<T> =>
+        Promise.race([Promise.resolve(p), new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), 4000))]);
       try {
         const [sitterRes, reviewsRes, availRes] = await Promise.all([
           timeout(supabase.from("babysitter_profiles").select("*").eq("id", id).single()),
@@ -86,8 +86,8 @@ const SitterProfilePage = () => {
       <header className="sticky top-0 z-30" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
         <div className="max-w-5xl mx-auto px-4 flex items-center gap-3 h-14">
           <Link to="/" className="flex items-center gap-2">
-            <img src={newLogo} alt="Logo" className="h-6 w-auto" style={{ filter: "brightness(0) invert(1)" }} />
-            <span className="font-heading font-bold text-white text-sm hidden sm:block">BabySitter<span style={{ color: TEAL }}>Hub</span></span>
+
+            <span className="font-heading font-bold text-white text-sm hidden sm:block">Baby<span style={{ color: TEAL }}>Care</span></span>
           </Link>
         </div>
       </header>

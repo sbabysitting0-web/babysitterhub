@@ -6,10 +6,11 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import {
   Search, MapPin, Baby, Briefcase, ShieldCheck, SlidersHorizontal,
-  Clock, X, Crosshair, Star, CheckCircle2,
+  Clock, X, Crosshair, Star, CheckCircle2, ArrowRight
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import { resolveCoords, TILE_URL, TILE_ATTR } from "@/utils/mapHelpers";
+import MapLoadingSpinner from "@/components/MapLoadingSpinner";
 
 /* ── Design tokens ───────────────────────────────────────────────────── */
 const TEAL = "#3DBEB5";
@@ -122,6 +123,7 @@ const BabysittingJobs = () => {
 
   const [jobs, setJobs]       = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMap, setLoadingMap] = useState(true);
   const [search, setSearch]   = useState("");
 
   /* babysitter state */
@@ -237,7 +239,14 @@ const BabysittingJobs = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  /* ── Update visible sitters when map moves ──────────────────────── */
+  /* ── Stable refs for map layers ─────────────────────────────────── */
+  const mapInitialized   = useRef(false);
+  const jobsGroupRef     = useRef<L.LayerGroup | null>(null);
+  const sitterGroupRef   = useRef<L.LayerGroup | null>(null);
+  const homeMarkerRef    = useRef<L.Marker | null>(null);
+  const syncRef          = useRef<() => void>(() => {});
+
+  /* ── Sync visible sitters from map bounds ───────────────────────── */
   const updateVisibleSitters = useCallback(() => {
     const map = mapInst.current;
     if (!map) { setVisibleSitters(babysitters); return; }
@@ -270,128 +279,102 @@ const BabysittingJobs = () => {
     return b.name?.toLowerCase().includes(q) || b.city?.toLowerCase().includes(q) || b.bio?.toLowerCase().includes(q);
   });
 
-  /* ── Leaflet map ────────────────────────────────────────────────── */
-  const setupMap = useCallback(() => {
-    if (!mapRef.current) return;
-    if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; }
+  // Keep ref current so map events never need to be re-registered
+  useEffect(() => { syncRef.current = updateVisibleSitters; }, [updateVisibleSitters]);
+  // Also sync immediately when babysitters/search change
+  useEffect(() => { updateVisibleSitters(); }, [updateVisibleSitters]);
 
-    const withCoords = filtered.filter((j) => j.location_lat && j.location_lng);
-    const center: [number, number] = homeCoords
-      ? homeCoords
-      : withCoords.length > 0
-        ? [withCoords[0].location_lat!, withCoords[0].location_lng!]
-        : [28.6139, 77.2090]; // Delhi default
+  /* ── Map init (runs ONCE) ───────────────────────────────────────── */
+  useEffect(() => {
+    if (!mapRef.current || mapInitialized.current) return;
 
     const map = L.map(mapRef.current, {
-      center, zoom: homeCoords ? 11 : withCoords.length > 0 ? 11 : 6,
+      center: [28.6139, 77.2090],
+      zoom: 6,
       zoomControl: false,
+      zoomSnap: 0.1,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 60,
+      zoomAnimation: true,
+      fadeAnimation: true,
+      markerZoomAnimation: true,
     });
     mapInst.current = map;
+    mapInitialized.current = true;
 
-    L.tileLayer(TILE_URL, {
-      attribution: TILE_ATTR,
-      maxZoom: 19,
-    }).addTo(map);
-
+    const tileLayer = L.tileLayer(TILE_URL, { attribution: TILE_ATTR, maxZoom: 19 }).addTo(map);
+    tileLayer.on("loading", () => setLoadingMap(true));
+    tileLayer.on("load", () => setLoadingMap(false));
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    /* Home marker */
-    if (homeCoords) {
-      const homeIcon = L.divIcon({
-        className: "",
-        html: `<div style="
-          width:40px;height:40px;
-          background:rgba(244,180,192,0.85);
-          border:3px solid rgba(255,255,255,0.9);
-          border-radius:50%;
-          box-shadow:0 2px 12px rgba(0,0,0,0.35);
-          display:flex;align-items:center;justify-content:center;
-        "><svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22" fill="rgba(244,180,192,0.85)" stroke="rgba(244,180,192,0.85)"/></svg></div>`,
-        iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -24],
-      });
-      L.marker(homeCoords, { icon: homeIcon, zIndexOffset: 1000 })
-        .addTo(map)
-        .bindPopup(`<div style="font-family:system-ui,sans-serif;text-align:center;padding:2px 0">
-          <p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1c1917">📍 Your location</p>
-          ${homeCity ? `<p style="font-size:11px;color:#78716c;margin:0">${homeCity}</p>` : ""}
-        </div>`);
-    }
+    jobsGroupRef.current    = L.layerGroup().addTo(map);
+    sitterGroupRef.current  = L.layerGroup().addTo(map);
 
-    /* Job pin markers (teal) */
+    const stableHandler = () => syncRef.current();
+    map.on("moveend", stableHandler);
+    map.on("zoomend", stableHandler);
+
+    return () => {
+      map.remove();
+      mapInst.current     = null;
+      mapInitialized.current = false;
+      jobsGroupRef.current   = null;
+      sitterGroupRef.current = null;
+      homeMarkerRef.current  = null;
+    };
+  }, []);
+
+  /* ── Home marker (updates when homeCoords change) ───────────────── */
+  useEffect(() => {
+    const map = mapInst.current;
+    if (!map) return;
+    if (homeMarkerRef.current) { map.removeLayer(homeMarkerRef.current); homeMarkerRef.current = null; }
+    if (!homeCoords) return;
+    const homeIcon = L.divIcon({
+      className: "",
+      html: `<div style="width:40px;height:40px;background:rgba(244,180,192,0.85);border:3px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 2px 12px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22" fill="rgba(244,180,192,0.85)" stroke="rgba(244,180,192,0.85)"/></svg></div>`,
+      iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -24],
+    });
+    homeMarkerRef.current = L.marker(homeCoords, { icon: homeIcon, zIndexOffset: 1000 })
+      .addTo(map)
+      .bindPopup(`<div style="font-family:system-ui,sans-serif;text-align:center;padding:2px 0"><p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1c1917">📍 Your location</p>${homeCity ? `<p style="font-size:11px;color:#78716c;margin:0">${homeCity}</p>` : ""}</div>`);
+    map.setView(homeCoords, 11, { animate: false });
+  }, [homeCoords, homeCity]);
+
+  /* ── Job markers (update when filtered jobs change) ─────────────── */
+  useEffect(() => {
+    const grp = jobsGroupRef.current;
+    if (!grp) return;
+    grp.clearLayers();
+    const withCoords = filtered.filter((j) => j.location_lat && j.location_lng);
     const pinIcon = L.divIcon({
       className: "",
-      html: `<div style="
-        width:30px;height:30px;
-        background:linear-gradient(135deg,${TEAL},#2a9d95);
-        border:3px solid rgba(255,255,255,0.85);
-        border-radius:50%;
-        box-shadow:0 2px 10px rgba(0,0,0,0.45);
-        display:flex;align-items:center;justify-content:center;
-      "><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
+      html: `<div style="width:30px;height:30px;background:linear-gradient(135deg,${TEAL},#2a9d95);border:3px solid rgba(255,255,255,0.85);border-radius:50%;box-shadow:0 2px 10px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
       iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -18],
     });
     withCoords.forEach((j) => {
-      const popup = `
-        <div style="min-width:190px;font-family:system-ui,sans-serif;padding:2px 0">
-          <p style="font-weight:700;font-size:13px;margin:0 0 3px;color:#1c1917">${j.title}</p>
-          ${j.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${j.city}</p>` : ""}
-          ${j.hourly_rate ? `<p style="font-size:12px;font-weight:600;color:${TEAL};margin:0 0 4px">₹${Number(j.hourly_rate).toFixed(0)}/hr</p>` : ""}
-          <p style="font-size:11px;color:#a8a29e;margin:0">${j.parent_name} · ${j.children_count ?? 1} child${(j.children_count ?? 1) > 1 ? "ren" : ""}</p>
-        </div>`;
-      L.marker([j.location_lat!, j.location_lng!], { icon: pinIcon }).addTo(map).bindPopup(popup);
+      const popup = `<div style="min-width:190px;font-family:system-ui,sans-serif;padding:2px 0"><p style="font-weight:700;font-size:13px;margin:0 0 3px;color:#1c1917">${j.title}</p>${j.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${j.city}</p>` : ""}${j.hourly_rate ? `<p style="font-size:12px;font-weight:600;color:${TEAL};margin:0 0 4px">₹${Number(j.hourly_rate).toFixed(0)}/hr</p>` : ""}<p style="font-size:11px;color:#a8a29e;margin:0">${j.parent_name} · ${j.children_count ?? 1} child${(j.children_count ?? 1) > 1 ? "ren" : ""}</p></div>`;
+      L.marker([j.location_lat!, j.location_lng!], { icon: pinIcon }).bindPopup(popup).addTo(grp);
     });
+  }, [filtered]);
 
-    /* Babysitter pin markers (pink/magenta) */
+  /* ── Babysitter markers (update when babysitters change) ────────── */
+  useEffect(() => {
+    const grp = sitterGroupRef.current;
+    if (!grp) return;
+    grp.clearLayers();
     const sitterIcon = L.divIcon({
       className: "",
-      html: `<div style="
-        width:34px;height:34px;
-        background:linear-gradient(135deg,#E91E8C,#C2185B);
-        border:3px solid rgba(255,255,255,0.9);
-        border-radius:50%;
-        box-shadow:0 2px 12px rgba(233,30,140,0.45);
-        display:flex;align-items:center;justify-content:center;
-      "><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
+      html: `<div style="width:34px;height:34px;background:linear-gradient(135deg,#E91E8C,#C2185B);border:3px solid rgba(255,255,255,0.9);border-radius:50%;box-shadow:0 2px 12px rgba(233,30,140,0.45);display:flex;align-items:center;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`,
       iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20],
     });
     babysitters.forEach((b) => {
       const stars = b.rating_avg ? `⭐ ${Number(b.rating_avg).toFixed(1)}` : "";
       const verified = b.is_verified ? `<span style="color:#16a34a;font-size:11px;font-weight:600">✓ Verified</span>` : "";
-      const popup = `
-        <div style="min-width:200px;font-family:system-ui,sans-serif;padding:2px 0">
-          <p style="font-weight:700;font-size:14px;margin:0 0 3px;color:#1c1917">${b.name}</p>
-          ${b.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${b.city}</p>` : ""}
-          ${b.bio ? `<p style="font-size:11px;color:#57534e;margin:0 0 4px;max-width:220px">${b.bio.length > 100 ? b.bio.slice(0, 100) + "…" : b.bio}</p>` : ""}
-          ${b.hourly_rate ? `<p style="font-size:13px;font-weight:700;color:#E91E8C;margin:0 0 3px">₹${Number(b.hourly_rate).toFixed(0)}/hr</p>` : ""}
-          <div style="display:flex;align-items:center;gap:8px;margin:0 0 2px">
-            ${stars ? `<span style="font-size:11px;color:#a8a29e">${stars}</span>` : ""}
-            ${verified}
-          </div>
-          ${b.years_experience ? `<p style="font-size:10px;color:#a8a29e;margin:0">${b.years_experience} yr${b.years_experience > 1 ? "s" : ""} experience</p>` : ""}
-        </div>`;
-      L.marker([b.location_lat!, b.location_lng!], { icon: sitterIcon }).addTo(map).bindPopup(popup);
+      const popup = `<div style="min-width:200px;font-family:system-ui,sans-serif;padding:2px 0"><p style="font-weight:700;font-size:14px;margin:0 0 3px;color:#1c1917">${b.name}</p>${b.city ? `<p style="font-size:11px;color:#78716c;margin:0 0 3px">📍 ${b.city}</p>` : ""}${b.bio ? `<p style="font-size:11px;color:#57534e;margin:0 0 4px;max-width:220px">${b.bio.length > 100 ? b.bio.slice(0, 100) + "…" : b.bio}</p>` : ""}${b.hourly_rate ? `<p style="font-size:13px;font-weight:700;color:#E91E8C;margin:0 0 3px">₹${Number(b.hourly_rate).toFixed(0)}/hr</p>` : ""}<div style="display:flex;align-items:center;gap:8px;margin:0 0 2px">${stars ? `<span style="font-size:11px;color:#a8a29e">${stars}</span>` : ""}${verified}</div>${b.years_experience ? `<p style="font-size:10px;color:#a8a29e;margin:0">${b.years_experience} yr${b.years_experience > 1 ? "s" : ""} experience</p>` : ""}</div>`;
+      L.marker([b.location_lat!, b.location_lng!], { icon: sitterIcon }).bindPopup(popup).addTo(grp);
     });
-
-    /* Listen for map move/zoom to update visible sitters in left panel */
-    const onMapMove = () => {
-      const bounds = map.getBounds();
-      const inView = babysitters.filter((b) =>
-        b.location_lat != null && b.location_lng != null &&
-        bounds.contains([b.location_lat!, b.location_lng!])
-      );
-      setVisibleSitters(inView);
-    };
-    map.on("moveend", onMapMove);
-    map.on("zoomend", onMapMove);
-    // Initial sync
-    setTimeout(onMapMove, 100);
-
-  }, [filtered, babysitters, homeCoords, homeCity]);
-
-  useEffect(() => {
-    const t = setTimeout(setupMap, 80);
-    return () => { clearTimeout(t); if (mapInst.current) { mapInst.current.remove(); mapInst.current = null; } };
-  }, [setupMap]);
+  }, [babysitters]);
 
   const toggle = (arr: string[], val: string, set: React.Dispatch<React.SetStateAction<string[]>>) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -415,8 +398,7 @@ const BabysittingJobs = () => {
     <div className="min-h-screen flex flex-col" style={{ background: BG }}>
       <Navbar />
 
-      {/* ── Search + filter bar ────────────────────────────────────── */}
-      <div className="pt-[76px]">
+      <div className="sticky top-0 z-30 pt-[76px]">
         <div style={{ background: CARD, borderBottom: `1px solid ${BDR}` }}>
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
             <div className="flex-1 relative">
@@ -494,7 +476,7 @@ const BabysittingJobs = () => {
       <div className="flex-1 flex flex-col lg:flex-row" style={{ minHeight: 0 }}>
 
         {/* ── Left panel ──────────────────────────────────────────── */}
-        <div className="w-full lg:w-[42%] xl:w-[38%] flex flex-col px-4 lg:pl-6 lg:pr-4 py-5 overflow-y-auto"
+        <div className="w-full lg:w-[42%] xl:w-[38%] flex flex-col px-4 lg:pl-6 lg:pr-4 py-5 overflow-y-auto relative z-10"
           style={{ maxHeight: "calc(100vh - 160px)", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent" }}>
 
           <h1 className="text-lg sm:text-xl font-bold text-white leading-snug">
@@ -662,7 +644,7 @@ const BabysittingJobs = () => {
           {/* Breadcrumb */}
           <div className="mt-5 pt-3" style={{ borderTop: `1px solid ${BDR}` }}>
             <div className="flex items-center gap-1.5 text-xs">
-              <Link to="/" className="font-medium underline" style={{ color: "rgba(255,255,255,0.45)" }}>Babysits</Link>
+              <Link to="/" className="font-medium underline" style={{ color: "rgba(255,255,255,0.45)" }}>BabyCare</Link>
               <span style={{ color: "rgba(255,255,255,0.2)" }}>/</span>
               <span className="font-medium underline" style={{ color: "rgba(255,255,255,0.45)" }}>Babysitting job</span>
             </div>
@@ -670,22 +652,26 @@ const BabysittingJobs = () => {
         </div>
 
         {/* ── Right panel: map ────────────────────────────────────── */}
-        <div className="w-full lg:w-[58%] xl:w-[62%] flex-shrink-0 relative">
-          <div ref={mapRef} className="w-full" style={{ height: "calc(100vh - 160px)", minHeight: 400 }} />
-          {homeCoords && (
-            <button
-              onClick={() => { if (mapInst.current && homeCoords) mapInst.current.flyTo(homeCoords, 14, { duration: 0.8 }); }}
-              className="absolute z-[1000] flex items-center justify-center"
-              style={{
-                top: 120, right: 10,
-                width: 36, height: 36, borderRadius: 4,
-                background: "#fff", border: "2px solid rgba(0,0,0,0.15)",
-                boxShadow: "0 1px 5px rgba(0,0,0,0.3)", cursor: "pointer",
-              }}
-              title="Go to my location">
-              <Crosshair size={17} style={{ color: "#333" }} />
-            </button>
-          )}
+        <div className="w-full lg:w-[58%] xl:w-[62%] flex-shrink-0 p-4 lg:p-6 lg:pl-0">
+          <div className="w-full relative z-0 rounded-2xl overflow-hidden shadow-2xl border" style={{ borderColor: 'rgba(255,255,255,0.08)', height: "calc(100vh - 192px)", minHeight: 400 }}>
+            {loadingMap && <MapLoadingSpinner />}
+            <div ref={mapRef} className="absolute inset-0" />
+            {homeCoords && (
+              <button
+                onClick={() => { if (mapInst.current && homeCoords) mapInst.current.flyTo(homeCoords, 14, { duration: 0.8 }); }}
+                className="absolute z-[1000] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+                style={{
+                  top: 90, right: 16,
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
+                  backdropFilter: "blur(8px)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)", cursor: "pointer",
+                }}
+                title="Go to my location">
+                <Crosshair size={18} style={{ color: "white" }} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

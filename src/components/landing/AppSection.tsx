@@ -1,8 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Heart, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AppSection = () => {
+  const { user, role } = useAuth();
+  const dashboardPath = role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard";
   const sectionRef = useRef<HTMLElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -97,10 +100,10 @@ const AppSection = () => {
             </div>
 
             <Link
-              to="/signup"
+              to={user ? dashboardPath : "/signup"}
               className="inline-flex items-center gap-2 bg-teal text-white font-semibold px-7 py-3.5 rounded-full hover:bg-teal/90 transition-all hover:shadow-lg hover:shadow-teal/30"
             >
-              Sign up for free <ArrowRight size={16} />
+              {user ? "Go to Dashboard" : "Sign up for free"} <ArrowRight size={16} />
             </Link>
           </div>
 

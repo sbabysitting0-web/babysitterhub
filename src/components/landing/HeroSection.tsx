@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { Shield, Star, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import babysitterImg from "@/assets/babysitter.png";
 
 const HeroSection = () => {
+  const { user } = useAuth();
   const sectionRef = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
@@ -174,7 +176,7 @@ const HeroSection = () => {
 
             <div ref={ctaRef} className="flex flex-wrap gap-4">
               <Link
-                to="/signup"
+                to={user ? "/babysitters" : "/signup"}
                 className="inline-flex items-center gap-2 bg-teal text-white font-semibold px-8 py-4 rounded-full hover:bg-teal/90 transition-all hover:shadow-lg hover:shadow-teal/30 hover:-translate-y-0.5 text-sm"
               >
                 Find a babysitter <ArrowRight size={16} />
