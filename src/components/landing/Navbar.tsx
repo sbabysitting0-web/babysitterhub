@@ -2,7 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, LayoutDashboard, ChevronDown, Menu, X, ArrowRight } from "lucide-react";
+import {
+  LogOut,
+  LayoutDashboard,
+  ChevronDown,
+  Menu,
+  X,
+  ArrowRight,
+} from "lucide-react";
 
 const NAV_LINKS = [
   { label: "How it works", href: "/", hash: "how-it-works" },
@@ -13,7 +20,11 @@ const NAV_LINKS = [
 
 const TEAL = "#3DBEB5";
 
-const Navbar = () => {
+interface NavbarProps {
+  matchContentWidth?: boolean;
+}
+
+const Navbar = ({ matchContentWidth = false }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
@@ -76,8 +87,10 @@ const Navbar = () => {
     window.location.href = "/login";
   };
 
-  const dashboardPath = role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard";
-  const displayName = user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
+  const dashboardPath =
+    role === "babysitter" ? "/babysitter/dashboard" : "/parent/dashboard";
+  const displayName =
+    user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
   const email = user?.email || "";
   const initials = displayName.slice(0, 1).toUpperCase();
 
@@ -94,14 +107,20 @@ const Navbar = () => {
       <div
         ref={pillRef}
         style={{
-          width: scrolled ? "clamp(280px, 64%, 900px)" : "clamp(280px, 96%, 1200px)",
+          width: matchContentWidth
+            ? "min(1280px, calc(100% - 32px))"
+            : scrolled
+              ? "clamp(280px, 64%, 900px)"
+              : "clamp(280px, 96%, 1200px)",
           marginTop: "12px",
           padding: scrolled ? "8px 20px" : "12px 20px",
           borderRadius: scrolled ? "9999px" : "0 0 20px 20px",
           background: scrolled ? "rgba(14,30,26,0.95)" : "rgba(14,30,26,0.80)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)", // Required for iOS Safari
-          border: scrolled ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(255,255,255,0.06)",
+          border: scrolled
+            ? "1px solid rgba(255,255,255,0.10)"
+            : "1px solid rgba(255,255,255,0.06)",
           borderTop: scrolled ? undefined : "none",
           boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.4)" : "none",
           transition: "all 0.5s ease",
@@ -111,8 +130,10 @@ const Navbar = () => {
       >
         {/* Brand name */}
         <Link to="/" className="flex items-center flex-shrink-0">
-          <span className="text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight whitespace-nowrap"
-            style={{ textShadow: "0 0 20px rgba(61,190,181,0.25)" }}>
+          <span
+            className="text-lg sm:text-xl font-heading font-extrabold text-white tracking-tight whitespace-nowrap"
+            style={{ textShadow: "0 0 20px rgba(61,190,181,0.25)" }}
+          >
             Baby<span style={{ color: TEAL }}>Care</span>
           </span>
         </Link>
@@ -143,76 +164,96 @@ const Navbar = () => {
               >
                 Go to Dashboard <ArrowRight size={15} className="ml-0.5" />
               </Link>
-              
+
               {/* Avatar dropdown — desktop */}
               <div className="relative hidden md:block" ref={dropRef}>
-              <button
-                onClick={() => setDropOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-full transition-all hover:opacity-90 focus:outline-none select-none"
-                style={{
-                  background: "rgba(61,190,181,0.1)",
-                  border: `1px solid ${dropOpen ? "rgba(61,190,181,0.5)" : "rgba(61,190,181,0.2)"}`,
-                  padding: "5px 10px 5px 5px",
-                }}
-              >
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                  style={{ background: TEAL }}
-                >
-                  {initials}
-                </div>
-                <span className="text-sm font-semibold text-white/80 max-w-[72px] truncate hidden lg:block">
-                  {displayName}
-                </span>
-                <ChevronDown
-                  size={13}
-                  className="text-white/40 transition-transform"
-                  style={{ transform: dropOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                />
-              </button>
-
-              {/* Dropdown panel */}
-              {dropOpen && (
-                <div
-                  className="absolute right-0 mt-3 rounded-2xl shadow-2xl overflow-hidden"
+                <button
+                  onClick={() => setDropOpen((v) => !v)}
+                  className="flex items-center gap-2 rounded-full transition-all hover:opacity-90 focus:outline-none select-none"
                   style={{
-                    background: "#0A1714",
-                    border: "1px solid rgba(61,190,181,0.15)",
-                    minWidth: 220,
-                    zIndex: 2001,
-                    boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                    background: "rgba(61,190,181,0.1)",
+                    border: `1px solid ${dropOpen ? "rgba(61,190,181,0.5)" : "rgba(61,190,181,0.2)"}`,
+                    padding: "5px 10px 5px 5px",
                   }}
                 >
-                  <div className="px-4 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white shrink-0"
-                        style={{ background: `linear-gradient(135deg, ${TEAL}, #2a9d95)` }}
-                      >
-                        {initials}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                        <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.35)" }}>{email}</p>
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                    style={{ background: TEAL }}
+                  >
+                    {initials}
+                  </div>
+                  <span className="text-sm font-semibold text-white/80 max-w-[72px] truncate hidden lg:block">
+                    {displayName}
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className="text-white/40 transition-transform"
+                    style={{
+                      transform: dropOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    }}
+                  />
+                </button>
+
+                {/* Dropdown panel */}
+                {dropOpen && (
+                  <div
+                    className="absolute right-0 mt-3 rounded-2xl shadow-2xl overflow-hidden"
+                    style={{
+                      background: "#0A1714",
+                      border: "1px solid rgba(61,190,181,0.15)",
+                      minWidth: 220,
+                      zIndex: 2001,
+                      boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    <div
+                      className="px-4 py-4"
+                      style={{
+                        borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white shrink-0"
+                          style={{
+                            background: `linear-gradient(135deg, ${TEAL}, #2a9d95)`,
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">
+                            {displayName}
+                          </p>
+                          <p
+                            className="text-xs truncate"
+                            style={{ color: "rgba(255,255,255,0.35)" }}
+                          >
+                            {email}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                    <div className="p-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+                        style={{ color: "rgba(255,100,100,0.8)" }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background =
+                            "rgba(255,80,80,0.08)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
+                      >
+                        <LogOut size={15} />
+                        Sign out
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-2">
-
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-                      style={{ color: "rgba(255,100,100,0.8)" }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,80,80,0.08)")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <LogOut size={15} />
-                      Sign out
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             </>
           ) : (
             /* Sign up — desktop only */
@@ -228,7 +269,10 @@ const Navbar = () => {
           {/* Hamburger — mobile only */}
           <button
             className="md:hidden flex items-center justify-center w-9 h-9 rounded-full transition-colors"
-            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.8)" }}
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              color: "rgba(255,255,255,0.8)",
+            }}
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle menu"
           >
@@ -251,16 +295,28 @@ const Navbar = () => {
         >
           {/* User info banner (if logged in) */}
           {user && (
-            <div className="flex items-center gap-3 px-4 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div
+              className="flex items-center gap-3 px-4 py-4"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+            >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white shrink-0"
-                style={{ background: `linear-gradient(135deg, ${TEAL}, #2a9d95)` }}
+                style={{
+                  background: `linear-gradient(135deg, ${TEAL}, #2a9d95)`,
+                }}
               >
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{displayName}</p>
-                <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.35)" }}>{email}</p>
+                <p className="text-sm font-semibold text-white truncate">
+                  {displayName}
+                </p>
+                <p
+                  className="text-xs truncate"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
+                >
+                  {email}
+                </p>
               </div>
             </div>
           )}
@@ -271,11 +327,16 @@ const Navbar = () => {
               <Link
                 key={label}
                 to={hash ? "/" : href}
-                onClick={(e) => { setMobileOpen(false); handleNavClick(e, hash); }}
+                onClick={(e) => {
+                  setMobileOpen(false);
+                  handleNavClick(e, hash);
+                }}
                 className="flex items-center text-sm font-medium px-4 py-3 rounded-xl transition-colors"
                 style={{ color: "rgba(255,255,255,0.65)" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "rgba(255,255,255,0.65)")
+                }
               >
                 {label}
               </Link>
@@ -283,10 +344,12 @@ const Navbar = () => {
           </nav>
 
           {/* Auth actions */}
-          <div className="px-3 pb-3 flex flex-col gap-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div
+            className="px-3 pb-3 flex flex-col gap-2"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+          >
             {user ? (
               <>
-
                 <button
                   onClick={handleLogout}
                   className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all"
@@ -310,7 +373,10 @@ const Navbar = () => {
                   to="/login"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center py-2.5 rounded-xl text-sm font-medium transition-all"
-                  style={{ color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.1)" }}
+                  style={{
+                    color: "rgba(255,255,255,0.55)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
                 >
                   Log in
                 </Link>
