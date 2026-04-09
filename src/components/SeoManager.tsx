@@ -17,7 +17,7 @@ const SEO_ROUTES: SeoConfig[] = [
     path: "/",
     title: "Trusted Babysitters and Nannies Across Asia",
     description:
-      "Find trusted babysitters, experienced nannies, and safe childcare services across Asia. Compare verified profiles, reviews, and book with confidence on BabyCare.",
+      "Find trusted babysitters and nanny services across Asia on BabyCare, the childcare platform to compare verified profiles and hire babysitter online.",
     keywords:
       "babysitter asia, trusted babysitter, childcare asia, nanny services, babycare",
   },

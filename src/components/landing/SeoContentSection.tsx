@@ -6,7 +6,8 @@ const SeoContentSection = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-white/10 bg-[#0E1E1A] p-8 sm:p-10">
           <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white mb-5">
-            Trusted Babysitter, Nanny, and Childcare Services Across Asia
+            Hire a Babysitter Online Across Asia with a Trusted Childcare
+            Platform
           </h2>
           <p className="text-white/55 leading-relaxed mb-7">
             BabyCare helps families compare babysitter and nanny profiles,
@@ -71,6 +72,64 @@ const SeoContentSection = () => {
             >
               Help and support
             </Link>
+            <Link
+              to="/about"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              About our childcare platform
+            </Link>
+            <Link
+              to="/terms"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              Privacy and terms
+            </Link>
+            <Link
+              to="/signup"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              Hire babysitter online
+            </Link>
+            <Link
+              to="/login"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              Parent and nanny login
+            </Link>
+          </div>
+
+          <h3 className="text-lg font-heading font-bold text-white mt-9 mb-3">
+            Childcare Safety and Parenting Resources
+          </h3>
+          <p className="text-white/50 text-sm leading-7 mb-3">
+            Use these trusted external resources for childcare safety guidance,
+            parenting support, and first-aid best practices.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="https://www.unicef.org/parenting"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              UNICEF parenting resources
+            </a>
+            <a
+              href="https://www.who.int/health-topics/child-health"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              WHO child health guidance
+            </a>
+            <a
+              href="https://www.redcross.org/take-a-class/cpr/performing-cpr/child-baby-cpr"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="text-teal hover:text-teal/80 text-sm underline underline-offset-4"
+            >
+              Red Cross child and baby CPR guide
+            </a>
           </div>
         </div>
       </div>

@@ -56,6 +56,19 @@ function waitForGIS(timeoutMs = 8000): Promise<void> {
             resolve();
             return;
         }
+
+        // Load GIS only when needed to keep non-auth pages lighter.
+        const existing = document.querySelector<HTMLScriptElement>(
+            "script[src='https://accounts.google.com/gsi/client']"
+        );
+        if (!existing) {
+            const script = document.createElement("script");
+            script.src = "https://accounts.google.com/gsi/client";
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
         const start = Date.now();
         const check = setInterval(() => {
             if (window.google?.accounts?.id) {

@@ -169,7 +169,7 @@ const FeaturesSection = () => {
             Why BabyCare
           </span>
           <h2 className="text-3xl md:text-4xl font-heading font-extrabold text-white mb-4">
-            Everything you need to trust your sitter
+            Why BabyCare is a trusted childcare platform in Asia
           </h2>
           <p className="text-white/40 text-base">
             We built the safest, simplest way to find family childcare.
