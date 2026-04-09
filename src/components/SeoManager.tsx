@@ -15,9 +15,9 @@ type SeoConfig = {
 const SEO_ROUTES: SeoConfig[] = [
   {
     path: "/",
-    title: "Find a Trusted Babysitter Across Asia",
+    title: "Trusted Babysitters and Nannies Across Asia",
     description:
-      "Find a trusted babysitter, verified babysitters, nannies, and childminders across Asia. Book childcare quickly with BabyCare.",
+      "Find trusted babysitters, experienced nannies, and safe childcare services across Asia. Compare verified profiles, reviews, and book with confidence on BabyCare.",
     keywords:
       "babysitter asia, trusted babysitter, childcare asia, nanny services, babycare",
   },

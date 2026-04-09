@@ -6,6 +6,7 @@ import BabysittersSection from "@/components/landing/BabysittersSection";
 import SafetySection from "@/components/landing/SafetySection";
 import ReviewsSection from "@/components/landing/ReviewsSection";
 import AppSection from "@/components/landing/AppSection";
+import SeoContentSection from "@/components/landing/SeoContentSection";
 import Footer from "@/components/landing/Footer";
 
 const Index = () => {
@@ -20,6 +21,7 @@ const Index = () => {
         <SafetySection />
         <ReviewsSection />
         <AppSection />
+        <SeoContentSection />
       </main>
       <Footer />
     </div>

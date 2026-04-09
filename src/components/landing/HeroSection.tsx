@@ -181,6 +181,8 @@ const HeroSection = () => {
                   />
                 </svg>
               </span>
+              <span className="word inline-block mr-[0.25em]">or</span>
+              <span className="word inline-block mr-[0.25em]">nanny</span>
               <br />
               {["your", "kids", "will", "love"].map((w) => (
                 <span key={w} className="word inline-block mr-[0.25em]">
@@ -193,8 +195,8 @@ const HeroSection = () => {
               ref={subRef}
               className="text-white/50 text-base leading-relaxed mb-8 max-w-md"
             >
-              Browse verified babysitters, nannies, and childminders near you.
-              Find the care that fits your family — anytime, anywhere.
+              Browse verified babysitters, nannies, and childminders across
+              Asia. Find safe childcare that fits your family anytime, anywhere.
             </p>
 
             <div ref={ctaRef} className="flex flex-wrap gap-4">
