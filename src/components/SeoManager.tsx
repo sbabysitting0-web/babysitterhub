@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Helmet } from "react-helmet";
 import { matchPath, useLocation } from "react-router-dom";
 
 const SITE_NAME = "BabyCare";
@@ -10,6 +10,7 @@ type SeoConfig = {
   description: string;
   keywords: string;
   robots?: string;
+  includeServiceSchema?: boolean;
 };
 
 const SEO_ROUTES: SeoConfig[] = [
@@ -20,6 +21,7 @@ const SEO_ROUTES: SeoConfig[] = [
       "Find trusted babysitters and nanny services across Asia on BabyCare, the childcare platform to compare verified profiles and hire babysitter online.",
     keywords:
       "babysitter asia, trusted babysitter, childcare asia, nanny services, babycare",
+    includeServiceSchema: true,
   },
   {
     path: "/babysitters",
@@ -221,42 +223,6 @@ const DEFAULT_SEO: SeoConfig = {
   keywords: "babysitter, childcare, trusted babysitters, asia families",
 };
 
-const upsertMetaByName = (name: string, content: string) => {
-  let element = document.head.querySelector<HTMLMetaElement>(
-    `meta[name='${name}']`,
-  );
-  if (!element) {
-    element = document.createElement("meta");
-    element.setAttribute("name", name);
-    document.head.appendChild(element);
-  }
-  element.setAttribute("content", content);
-};
-
-const upsertMetaByProperty = (property: string, content: string) => {
-  let element = document.head.querySelector<HTMLMetaElement>(
-    `meta[property='${property}']`,
-  );
-  if (!element) {
-    element = document.createElement("meta");
-    element.setAttribute("property", property);
-    document.head.appendChild(element);
-  }
-  element.setAttribute("content", content);
-};
-
-const upsertCanonical = (href: string) => {
-  let element = document.head.querySelector<HTMLLinkElement>(
-    "link[rel='canonical']",
-  );
-  if (!element) {
-    element = document.createElement("link");
-    element.setAttribute("rel", "canonical");
-    document.head.appendChild(element);
-  }
-  element.setAttribute("href", href);
-};
-
 const resolveSeoForPath = (pathname: string): SeoConfig => {
   const match = SEO_ROUTES.find((route) =>
     Boolean(matchPath({ path: route.path, end: true }, pathname)),
@@ -267,38 +233,86 @@ const resolveSeoForPath = (pathname: string): SeoConfig => {
 
 const SeoManager = () => {
   const location = useLocation();
+  const seo = resolveSeoForPath(location.pathname);
+  const currentOrigin = window.location.origin || SITE_URL;
+  const absoluteUrl = `${currentOrigin}${location.pathname}`;
+  const imageUrl = `${currentOrigin}/logo.png`;
+  const fullTitle = `${seo.title} | ${SITE_NAME}`;
+  const robotsValue = seo.robots ?? "index, follow";
 
-  useEffect(() => {
-    const seo = resolveSeoForPath(location.pathname);
-    const currentOrigin = window.location.origin || SITE_URL;
-    const absoluteUrl = `${currentOrigin}${location.pathname}`;
-    const imageUrl = `${currentOrigin}/logo.png`;
-    const fullTitle = `${seo.title} | ${SITE_NAME}`;
-    const robotsValue = seo.robots ?? "index, follow";
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: currentOrigin,
+    logo: imageUrl,
+    email: "sbabysitting0@gmail.com",
+  };
 
-    document.title = fullTitle;
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Babysitter and nanny booking platform",
+    serviceType: "Childcare platform",
+    areaServed: "Asia",
+    provider: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: currentOrigin,
+    },
+    offers: {
+      "@type": "Offer",
+      availability: "https://schema.org/InStock",
+    },
+  };
 
-    upsertMetaByName("description", seo.description);
-    upsertMetaByName("keywords", seo.keywords);
-    upsertMetaByName("author", SITE_NAME);
-    upsertMetaByName("robots", robotsValue);
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: SITE_NAME,
+    url: currentOrigin,
+    image: imageUrl,
+    email: "sbabysitting0@gmail.com",
+    areaServed: "Asia",
+  };
 
-    upsertMetaByProperty("og:type", "website");
-    upsertMetaByProperty("og:site_name", SITE_NAME);
-    upsertMetaByProperty("og:title", fullTitle);
-    upsertMetaByProperty("og:description", seo.description);
-    upsertMetaByProperty("og:url", absoluteUrl);
-    upsertMetaByProperty("og:image", imageUrl);
+  return (
+    <Helmet prioritizeSeoTags>
+      <title>{fullTitle}</title>
+      <meta name="description" content={seo.description} />
+      <meta name="keywords" content={seo.keywords} />
+      <meta name="author" content={SITE_NAME} />
+      <meta name="robots" content={robotsValue} />
 
-    upsertMetaByName("twitter:card", "summary_large_image");
-    upsertMetaByName("twitter:title", fullTitle);
-    upsertMetaByName("twitter:description", seo.description);
-    upsertMetaByName("twitter:image", imageUrl);
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={seo.description} />
+      <meta property="og:url" content={absoluteUrl} />
+      <meta property="og:image" content={imageUrl} />
 
-    upsertCanonical(absoluteUrl);
-  }, [location.pathname]);
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={seo.description} />
+      <meta name="twitter:image" content={imageUrl} />
 
-  return null;
+      <link rel="canonical" href={absoluteUrl} />
+
+      <script type="application/ld+json">
+        {JSON.stringify(organizationSchema)}
+      </script>
+      {seo.includeServiceSchema ? (
+        <>
+          <script type="application/ld+json">
+            {JSON.stringify(serviceSchema)}
+          </script>
+          <script type="application/ld+json">
+            {JSON.stringify(localBusinessSchema)}
+          </script>
+        </>
+      ) : null}
+    </Helmet>
+  );
 };
 
 export default SeoManager;

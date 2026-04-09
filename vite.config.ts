@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    minify: "esbuild",
+    cssMinify: true,
+    sourcemap: false,
+    target: "es2019",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

@@ -75,7 +75,7 @@
       "destination": "https://utqlshqdbefcgoaigmnz.supabase.co/:path*"
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|robots\\.txt|sitemap\\.xml|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]

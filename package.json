@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "react-snap",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -57,6 +58,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.61.1",
+    "react-helmet": "^6.1.0",
     "react-leaflet": "^4.2.1",
     "react-resizable-panels": "^2.1.9",
     "react-router-dom": "^6.30.1",
@@ -85,10 +87,27 @@
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
+    "react-snap": "^1.23.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
     "vitest": "^3.2.4"
+  },
+  "reactSnap": {
+    "source": "dist",
+    "include": [
+      "/",
+      "/babysitters",
+      "/about",
+      "/help",
+      "/terms",
+      "/tips/parents",
+      "/tips/babysitters",
+      "/special-needs",
+      "/babysitting-jobs"
+    ],
+    "skipThirdPartyRequests": true,
+    "crawl": true
   }
 }
