@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import { matchPath, useLocation } from "react-router-dom";
 
 const SITE_NAME = "BabyCare";
-const SITE_URL = "https://www.babycare.sg";
-const DEFAULT_IMAGE = `${SITE_URL}/logo.png`;
+const SITE_URL = "https://babysitterhub.vercel.app";
 
 type SeoConfig = {
   path: string;
@@ -16,9 +15,9 @@ type SeoConfig = {
 const SEO_ROUTES: SeoConfig[] = [
   {
     path: "/",
-    title: "Find Trusted Babysitters Across Asia",
+    title: "Find a Trusted Babysitter Across Asia",
     description:
-      "Find verified babysitters, nannies, and childminders across Asia. Book trusted childcare quickly with BabyCare.",
+      "Find a trusted babysitter, verified babysitters, nannies, and childminders across Asia. Book childcare quickly with BabyCare.",
     keywords:
       "babysitter asia, trusted babysitter, childcare asia, nanny services, babycare",
   },
@@ -271,7 +270,9 @@ const SeoManager = () => {
 
   useEffect(() => {
     const seo = resolveSeoForPath(location.pathname);
-    const absoluteUrl = `${SITE_URL}${location.pathname}`;
+    const currentOrigin = window.location.origin || SITE_URL;
+    const absoluteUrl = `${currentOrigin}${location.pathname}`;
+    const imageUrl = `${currentOrigin}/logo.png`;
     const fullTitle = `${seo.title} | ${SITE_NAME}`;
     const robotsValue = seo.robots ?? "index, follow";
 
@@ -287,12 +288,12 @@ const SeoManager = () => {
     upsertMetaByProperty("og:title", fullTitle);
     upsertMetaByProperty("og:description", seo.description);
     upsertMetaByProperty("og:url", absoluteUrl);
-    upsertMetaByProperty("og:image", DEFAULT_IMAGE);
+    upsertMetaByProperty("og:image", imageUrl);
 
     upsertMetaByName("twitter:card", "summary_large_image");
     upsertMetaByName("twitter:title", fullTitle);
     upsertMetaByName("twitter:description", seo.description);
-    upsertMetaByName("twitter:image", DEFAULT_IMAGE);
+    upsertMetaByName("twitter:image", imageUrl);
 
     upsertCanonical(absoluteUrl);
   }, [location.pathname]);
