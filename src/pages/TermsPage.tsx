@@ -3,7 +3,7 @@ import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
 const tabs = ["Terms of Service", "Privacy Policy"] as const;
-type Tab = typeof tabs[number];
+type Tab = (typeof tabs)[number];
 
 const terms = `**Effective date:** 1 January 2024
 
@@ -29,7 +29,7 @@ We reserve the right to suspend or terminate accounts that violate these Terms w
 To the maximum extent permitted by law, BabyCare shall not be liable for any indirect, incidental, or consequential damages arising from Platform use.
 
 ## 8. Governing Law
-These Terms are governed by the laws of Singapore.`;
+These Terms are governed by the laws of the applicable jurisdiction.`;
 
 const privacy = `**Effective date:** 1 January 2024
 
@@ -46,20 +46,37 @@ We do not sell your data. We share only what is necessary with payment processor
 We retain your data for as long as your account is active or as required by law.
 
 ## 5. Your Rights
-You may request access to, correction of, or deletion of your personal data at any time by emailing hello@babycare.sg.
+You may request access to, correction of, or deletion of your personal data at any time by emailing sbabysitting0@gmail.com.
 
 ## 6. Cookies
 We use cookies to maintain sessions and analyse usage. You can disable cookies in your browser settings.
 
 ## 7. Contact
-For privacy queries, contact us at hello@babycare.sg.`;
+For privacy queries, contact us at sbabysitting0@gmail.com.`;
 
 const renderMd = (text: string) =>
   text.split("\n").map((line, i) => {
-    if (line.startsWith("## ")) return <h2 key={i} className="text-base font-heading font-bold text-white mt-8 mb-2">{line.slice(3)}</h2>;
-    if (line.startsWith("**") && line.endsWith("**")) return <p key={i} className="text-xs text-teal font-semibold mb-4">{line.slice(2, -2)}</p>;
+    if (line.startsWith("## "))
+      return (
+        <h2
+          key={i}
+          className="text-base font-heading font-bold text-white mt-8 mb-2"
+        >
+          {line.slice(3)}
+        </h2>
+      );
+    if (line.startsWith("**") && line.endsWith("**"))
+      return (
+        <p key={i} className="text-xs text-teal font-semibold mb-4">
+          {line.slice(2, -2)}
+        </p>
+      );
     if (!line.trim()) return <div key={i} className="h-1" />;
-    return <p key={i} className="text-sm text-white/45 leading-relaxed mb-1">{line}</p>;
+    return (
+      <p key={i} className="text-sm text-white/45 leading-relaxed mb-1">
+        {line}
+      </p>
+    );
   });
 
 const TermsPage = () => {
@@ -68,13 +85,40 @@ const TermsPage = () => {
     <div className="min-h-screen" style={{ background: "#080F0D" }}>
       <Navbar />
       <section className="relative overflow-hidden py-20">
-        <div className="absolute pointer-events-none" style={{ top: "-60px", left: "-60px", width: "400px", height: "400px", background: "radial-gradient(circle, rgba(61,190,181,0.10) 0%, transparent 65%)", borderRadius: "50%", filter: "blur(50px)" }} />
-        <div className="absolute right-0 top-1/3 pointer-events-none" style={{ width: "65px", height: "130px", background: "linear-gradient(270deg, rgba(61,190,181,0.10) 0%, transparent 100%)", borderRadius: "130px 0 0 130px", border: "1px solid rgba(61,190,181,0.12)", borderRight: "none" }} />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "-60px",
+            left: "-60px",
+            width: "400px",
+            height: "400px",
+            background:
+              "radial-gradient(circle, rgba(61,190,181,0.10) 0%, transparent 65%)",
+            borderRadius: "50%",
+            filter: "blur(50px)",
+          }}
+        />
+        <div
+          className="absolute right-0 top-1/3 pointer-events-none"
+          style={{
+            width: "65px",
+            height: "130px",
+            background:
+              "linear-gradient(270deg, rgba(61,190,181,0.10) 0%, transparent 100%)",
+            borderRadius: "130px 0 0 130px",
+            border: "1px solid rgba(61,190,181,0.12)",
+            borderRight: "none",
+          }}
+        />
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <span className="inline-block text-teal text-xs font-bold uppercase tracking-widest mb-4">Legal</span>
-            <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-white">Terms & Privacy</h1>
+            <span className="inline-block text-teal text-xs font-bold uppercase tracking-widest mb-4">
+              Legal
+            </span>
+            <h1 className="text-4xl md:text-5xl font-heading font-extrabold text-white">
+              Terms & Privacy
+            </h1>
           </div>
 
           {/* Tabs */}

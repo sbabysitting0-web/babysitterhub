@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const sitters = [
   {
     name: "Aaishah R.",
-    location: "Tampines, Singapore",
+    location: "Kuala Lumpur, Malaysia",
     rate: 18,
     rating: 4.9,
     reviews: 34,
@@ -16,7 +16,7 @@ const sitters = [
   },
   {
     name: "Victoria L.",
-    location: "Woodlands, Singapore",
+    location: "Bangkok, Thailand",
     rate: 15,
     rating: 4.8,
     reviews: 22,
@@ -27,7 +27,7 @@ const sitters = [
   },
   {
     name: "Wendy T.",
-    location: "Yishun, Singapore",
+    location: "Jakarta, Indonesia",
     rate: 16,
     rating: 4.7,
     reviews: 18,
@@ -38,7 +38,7 @@ const sitters = [
   },
   {
     name: "Raiha K.",
-    location: "Bedok, Singapore",
+    location: "Manila, Philippines",
     rate: 14,
     rating: 4.6,
     reviews: 11,
@@ -49,7 +49,7 @@ const sitters = [
   },
   {
     name: "Priya S.",
-    location: "Jurong, Singapore",
+    location: "Mumbai, India",
     rate: 17,
     rating: 4.8,
     reviews: 29,
@@ -60,7 +60,7 @@ const sitters = [
   },
   {
     name: "Clara M.",
-    location: "Clementi, Singapore",
+    location: "Ho Chi Minh City, Vietnam",
     rate: 13,
     rating: 4.5,
     reviews: 9,
@@ -112,7 +112,9 @@ const SitterCard = ({ sitter }: { sitter: (typeof sitters)[0] }) => (
       <div className="text-right">
         <p className="text-sm font-bold text-white">SGD {sitter.rate}/h</p>
         <StarRating rating={sitter.rating} />
-        <p className="text-[10px] text-white/40 mt-0.5">{sitter.reviews} reviews</p>
+        <p className="text-[10px] text-white/40 mt-0.5">
+          {sitter.reviews} reviews
+        </p>
       </div>
     </div>
 
@@ -181,10 +183,12 @@ const BabysittersSection = () => {
           className="flex gap-5 pl-4 sm:pl-6 lg:pl-8"
           style={{ animation: "sitter-marquee 32s linear infinite" }}
           onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLDivElement).style.animationPlayState = "paused")
+            ((e.currentTarget as HTMLDivElement).style.animationPlayState =
+              "paused")
           }
           onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLDivElement).style.animationPlayState = "running")
+            ((e.currentTarget as HTMLDivElement).style.animationPlayState =
+              "running")
           }
         >
           {/* Duplicate 3× so loop is seamless at all screen widths */}
@@ -209,8 +213,8 @@ const BabysittersSection = () => {
               Are you a babysitter?
             </h3>
             <p className="text-gray-300 text-sm max-w-md">
-              Turn your passion into flexible work you love. Connect with families
-              in your area — entirely free for babysitters.
+              Turn your passion into flexible work you love. Connect with
+              families in your area — entirely free for babysitters.
             </p>
           </div>
           <Link

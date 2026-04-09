@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
+import SeoManager from "@/components/SeoManager";
 
 // Pages
 import Index from "./pages/Index";
@@ -49,6 +50,7 @@ const App = () => (
       >
         <AuthProvider>
           <ScrollToTop />
+          <SeoManager />
           <Routes>
             {/* Public */}
             <Route path="/" element={<Index />} />
