@@ -302,14 +302,14 @@ const SeoManager = () => {
         {JSON.stringify(organizationSchema)}
       </script>
       {seo.includeServiceSchema ? (
-        <>
-          <script type="application/ld+json">
-            {JSON.stringify(serviceSchema)}
-          </script>
-          <script type="application/ld+json">
-            {JSON.stringify(localBusinessSchema)}
-          </script>
-        </>
+        <script type="application/ld+json">
+          {JSON.stringify(serviceSchema)}
+        </script>
+      ) : null}
+      {seo.includeServiceSchema ? (
+        <script type="application/ld+json">
+          {JSON.stringify(localBusinessSchema)}
+        </script>
       ) : null}
     </Helmet>
   );
